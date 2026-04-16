@@ -38,7 +38,7 @@ pub fn get_id(data: &Value) -> u64 {
 }
 
 pub fn get_dist(posa: (u64, u64, u64), posb: (u64, u64, u64)) -> f64 {
-    let xd = (posa.0 as f64) - (posb.0 as f64);
+    let xd = (pa.0 as f64) - (posb.0 as f64);
     let yd = (posa.1 as f64) - (posb.1 as f64);
     let zd = (posa.2 as f64) - (posb.2 as f64);
     (xd.powf(2.0) + yd.powf(2.0) + zd.powf(2.0)).sqrt()
