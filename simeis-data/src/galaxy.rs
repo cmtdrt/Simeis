@@ -81,13 +81,7 @@ impl Galaxy {
 
     pub fn is_discovered(&self, coord: &SpaceCoord) -> bool {
         let (x, y, z) = coord;
-        for ((sx, ex), (sy, ey), (sz, ez)) in self.discovered.iter() {
-            if (x < sx) || (x > ex) || (y < sy) || (y > ey) || (z < sz) || (z > ez) {
-                continue;
-            }
-            return true;
-        }
-        false
+
     }
 
     pub fn get<'a>(&'a self, coord: &SpaceCoord) -> Option<&'a SpaceObject> {
