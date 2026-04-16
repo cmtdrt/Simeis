@@ -85,9 +85,6 @@ impl Resource {
         }
         match self {
             Resource::Carbon | Resource::Hydrogen => base,
-            Resource::Iron | Resource::Oxygen => 3.75 * base,
-            Resource::Copper | Resource::Helium => 11.0 * base,
-            Resource::Gold | Resource::Ozone => 14.0 * base,
 
             // All the things that are only crafted
             _ => unreachable!("Extraction difficulty on crafted resources"),
