@@ -3,7 +3,7 @@ TYPST_SRC = doc/manual.typ
 TYPST_OUT = doc/manuel_utilisateur.pdf
 
 # Définition des cibles de make ( pas de conflit avec de potentiel fichiers du projet )
-.PHONY: ci clean fmt-check build test doc
+.PHONY: ci clean fmt-check build test doc typst
 
 ci:  clean fmt-check build test doc
 
