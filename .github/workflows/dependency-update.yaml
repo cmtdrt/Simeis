@@ -2,7 +2,9 @@ name: Scheduled Rust dependency update
 
 on:
   schedule:
-    - cron: "0 15 * * *" # Tous les jours à 15:00 UTC
+  # Tous les jours a 15:10 heure de Paris (Europe/Paris).
+    - cron: "10 15 * * *"
+      timezone: "Europe/Paris"
 
 env:
   # Rajoute des couleurs dans le terminal 
