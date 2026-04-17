@@ -22,6 +22,6 @@ test:
 	cargo test --verbose
 
 # Construction du PDF du manuel utilisateur à partir du fichier typst
-doc: 	
+doc:
 	typst compile $(TYPST_SRC) $(TYPST_OUT)
 
