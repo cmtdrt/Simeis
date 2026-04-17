@@ -1,6 +1,7 @@
 name: Scheduled Rust dependency update
 
 on:
+  workflow_dispatch:
   schedule:
   # Tous les jours a 15:10 heure de Paris (Europe/Paris).
     - cron: "* * * * *"
