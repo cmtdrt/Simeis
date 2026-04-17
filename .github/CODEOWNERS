@@ -17,7 +17,7 @@
 .github/                @cmtdrt @matiasbellaud
 .github/workflows/      @cmtdrt @matiasbellaud
 Makefile                @cmtdrt @matiasbellaud
-\*.yaml                 @cmtdrt @matiasbellaud
+*.yaml                 @cmtdrt @matiasbellaud
 CODEOWNERS              @cmtdrt @matiasbellaud
 
 # SiMEIS Server
