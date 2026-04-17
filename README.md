@@ -1,5 +1,5 @@
 # Simeis
 
-Jeu par API
+Jeu par API avec CI
 
-avec CI
+Les PR ont une template
