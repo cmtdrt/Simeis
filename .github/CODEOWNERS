@@ -1,0 +1,29 @@
+# CODEOWNERS — GitHub
+
+# Définit les reviewers automatiques par fichier/dossier.
+
+# Syntaxe : <le fichier, le dossier ou l'extension> <le_responsable_1> <le_responsable_2> ...
+
+# Les responsables peuvent être : @user, @org/team, ou user@email.com
+
+# La dernière règle qui match un fichier l'emporte.
+
+# Pour tous les fichiers qui n'ont pas de règles (défaut)
+
+* @cmtdrt
+
+# CI / CD
+
+.github/                @cmtdrt @matiasbellaud
+.github/workflows/      @cmtdrt @matiasbellaud
+Makefile                @cmtdrt @matiasbellaud
+\*.yaml                 @cmtdrt @matiasbellaud
+CODEOWNERS              @cmtdrt @matiasbellaud
+
+# SiMEIS Server
+
+/simeis-server/ @cmtdrt
+
+# Readme
+
+README.md @FuzMaxime
