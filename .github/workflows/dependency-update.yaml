@@ -3,12 +3,11 @@ name: Scheduled Rust dependency update
 on:
   workflow_dispatch:
   schedule:
-  # Tous les jours a 15:10 heure de Paris (Europe/Paris).
-    - cron: "* * * * *"
-      timezone: "Europe/Paris"
+    # Tous les jours a 5 heure UTC.
+    - cron: "0 5 * * *"
 
 env:
-  # Rajoute des couleurs dans le terminal 
+  # Rajoute des couleurs dans le terminal
   CARGO_TERM_COLOR: always
 
 permissions:
@@ -105,4 +104,3 @@ jobs:
             Cargo.lock
             example/rust/Cargo.lock
             sdk/rust/Cargo.lock
-

@@ -1,7 +1,7 @@
 target
 .cargohome
 result
-*.pdf
+# *.pdf
 *.zip
 .~lock.*.ods#
 scores.json
