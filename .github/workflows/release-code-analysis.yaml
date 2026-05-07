@@ -1,0 +1,27 @@
+name: Release Code Analysis
+
+on:
+  push:
+    branches:
+      - 'release/**'
+  pull_request:
+    branches:
+      - 'release/**'
+
+jobs:
+  code-analysis:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: stable 
+      - run: cargo install cargo-audit cargo-udeps --locked
+      - run: cargo test --all --features heavy-testing
+      - run: cargo build --all --features heavy-testing
+      - run: python tests/functional_test.py
+      - run: cargo audit
+      - run: cargo udeps
