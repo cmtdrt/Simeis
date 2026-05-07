@@ -51,6 +51,12 @@ jobs:
 
           echo "Targets: ${targets_json}"
 
+          # Assure que le label "bot/propagate" existe (sinon la création de PR échoue).
+          if ! gh label list --search "bot/propagate" --json name --jq 'any(.[]; .name == "bot/propagate")' | grep -q true; then
+            echo "Label 'bot/propagate' not found. Creating it."
+            gh label create "bot/propagate" --color "1d4ed8" --description "Automated propagation PRs" || true
+          fi
+
           # Boucle sur chaque branche release/x demandée par labels
           echo "${targets_json}" | jq -r '.[]' | while read -r release_branch; do
             echo ""
@@ -79,5 +85,10 @@ jobs:
               --head "${work_branch}" \
               --title "chore: propagate PR #${PR_NUMBER} to ${release_branch}" \
               --body "Propagation automatique de la PR #${PR_NUMBER} vers \`${release_branch}\`.\n\n- Source: \`${PR_HEAD_REF}\`\n- Merge commit: \`${MERGE_SHA}\`" \
-              --label "bot/propagate"
+              --label "bot/propagate" || \
+              gh pr create \
+                --base "${release_branch}" \
+                --head "${work_branch}" \
+                --title "chore: propagate PR #${PR_NUMBER} to ${release_branch}" \
+                --body "Propagation automatique de la PR #${PR_NUMBER} vers \`${release_branch}\`.\n\n- Source: \`${PR_HEAD_REF}\`\n- Merge commit: \`${MERGE_SHA}\`"
           done
