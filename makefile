@@ -3,15 +3,23 @@ TYPST_SRC = doc/manual.typ
 TYPST_OUT = doc/manuel_utilisateur.pdf
 
 # Définition des cibles de make ( pas de conflit avec de potentiel fichiers du projet )
-.PHONY: ci clean fmt-check build test doc typst
+.PHONY: ci clean check fmt-check clippy build test doc typst
 
 # Nettoyer fichiers de build
 clean:
 	cargo clean
 
+# Vérification de la syntaxe et des erreurs de compilation
+check:
+	cargo check
+
 # formattage du code et vérification du formatage
 fmt-check:
 	cargo fmt --check
+
+# Analyse statique du code 
+clippy:
+	cargo clippy
 
 # Rustflags pour la compilation du kernel, avec optimisation et de réduction de la taille du binaire
 build:
