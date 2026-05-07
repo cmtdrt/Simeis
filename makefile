@@ -3,7 +3,7 @@ TYPST_SRC = doc/manual.typ
 TYPST_OUT = doc/manuel_utilisateur.pdf
 
 # Définition des cibles de make ( pas de conflit avec de potentiel fichiers du projet )
-.PHONY: ci clean check fmt-check clippy build test doc typst
+.PHONY: ci clean check fmt-check clippy build test doc typst py-format py-check
 
 # Nettoyer fichiers de build
 clean:
@@ -32,4 +32,11 @@ test:
 # Construction du PDF du manuel utilisateur à partir du fichier typst
 doc:
 	typst compile $(TYPST_SRC) $(TYPST_OUT)
+
+# Python: vérification du formatage et analyse statique (Ruff)
+py-format:
+	ruff format --check sdk tests example
+
+py-check:
+	ruff check sdk tests example
 
