@@ -3,7 +3,7 @@ TYPST_SRC = doc/manual.typ
 TYPST_OUT = doc/manuel_utilisateur.pdf
 
 # Définition des cibles de make ( pas de conflit avec de potentiel fichiers du projet )
-.PHONY: ci clean check fmt-check clippybuild test doc typst
+.PHONY: ci clean check fmt-check clippy build test doc typst
 
 # Nettoyer fichiers de build
 clean:
