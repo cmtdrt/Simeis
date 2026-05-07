@@ -1,0 +1,83 @@
+name: Propagate bugfixes to release branches
+
+on:
+  pull_request:
+    types: [closed] # S'active à la fermeture d'une PR. (Pas nécessairement le merge, on va placer une vérification plus bas)
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  propagate:
+    name: Create propagation PRs (gh)
+    runs-on: ubuntu-latest
+    # On propage uniquement sur les PR mergées qui sont sur des branches avec un nom commencant par bug/
+    if: >
+      github.event.pull_request.merged == true &&
+      startsWith(github.event.pull_request.head.ref, 'bug/')
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Configure git identity
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Propagate to labeled release branches
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_HEAD_REF: ${{ github.event.pull_request.head.ref }}
+          MERGE_SHA: ${{ github.event.pull_request.merge_commit_sha }}
+        run: |
+          set -euo pipefail
+
+          if [[ -z "${MERGE_SHA}" ]]; then
+            echo "merge_commit_sha is empty. This workflow expects merge-commit or squash merges."
+            exit 1
+          fi
+
+          # Récupère les labels de la PR via gh, et extrait les cibles release/x.
+          targets_json="$(gh pr view "${PR_NUMBER}" --json labels --jq '[.labels[].name | select(startswith("propagate:release/")) | sub("^propagate:"; "")] | unique')"
+
+          if [[ "${targets_json}" == "[]" ]]; then
+            echo "No propagate:release/* label found. Nothing to do."
+            exit 0
+          fi
+
+          echo "Targets: ${targets_json}"
+
+          # Boucle sur chaque branche release/x demandée par labels
+          echo "${targets_json}" | jq -r '.[]' | while read -r release_branch; do
+            echo ""
+            echo "=== Propagate PR #${PR_NUMBER} to ${release_branch} ==="
+
+            safe_release="${release_branch//\//-}"
+            work_branch="bot/propagate-pr-${PR_NUMBER}-to-${safe_release}"
+
+            git fetch origin "${release_branch}:${release_branch}"
+            git switch -C "${work_branch}" "${release_branch}"
+
+            # Applique le résultat final de la PR bug sur la branche release
+            git cherry-pick "${MERGE_SHA}"
+
+            git push -u origin "${work_branch}"
+
+            # Si une PR existe déjà pour cette head/base, on ne recrée pas.
+            existing="$(gh pr list --base "${release_branch}" --head "${work_branch}" --json number --jq '.[0].number // empty')"
+            if [[ -n "${existing}" ]]; then
+              echo "PR already exists: #${existing}"
+              continue
+            fi
+
+            gh pr create \
+              --base "${release_branch}" \
+              --head "${work_branch}" \
+              --title "chore: propagate PR #${PR_NUMBER} to ${release_branch}" \
+              --body "Propagation automatique de la PR #${PR_NUMBER} vers \`${release_branch}\`.\n\n- Source: \`${PR_HEAD_REF}\`\n- Merge commit: \`${MERGE_SHA}\`" \
+              --label "bot/propagate"
+          done
