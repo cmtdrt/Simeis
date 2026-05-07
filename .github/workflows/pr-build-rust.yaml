@@ -17,7 +17,9 @@ jobs:
       - run: rustup update stable && rustup default stable
       - run: rustup component add rustfmt
       - run: make clean
+      - run: make check
       - run: make fmt-check
+      - run: make clippy
       - run: make build
       - run: make test
       - run: make doc
