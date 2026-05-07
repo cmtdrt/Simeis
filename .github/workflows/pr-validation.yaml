@@ -15,7 +15,7 @@ jobs:
           HEAD_BRANCH="${{ github.head_ref }}"
 
           # Règle: Les PRs vers les branches release/* doivent provenir de main ou bug/*
-          if [[ $BASE_BRANCH =~ ^release/ ]]; then
+          if [[ $BASE_BRANCH == release/* ]]; then
 
             # Valide si la branche source est main ou bug/*
             if [[ $HEAD_BRANCH == "main" || $HEAD_BRANCH =~ ^bug/ ]]; then
@@ -23,26 +23,11 @@ jobs:
             else
               exit 1
             fi
+
+          else
+            # Pour les autres branches, on n'impose aucune règle spécifique
+            exit 0
           fi
-
-      - name: Close PR if branch validation failed
-        if: failure()
-        uses: superbrothers/close-pull-request@v3
-        with:
-          delete-branch: false
-          comment: |
-            **Cette PR ne respecte pas les règles de branchement**
-
-            ### Problème
-            Les PRs ciblant `release/*` **doivent** provenir uniquement de :
-            - `main` (branche principale)
-            - `bug/*` (correctifs de bugs)
-
-            Branche actuelle : `${{ github.head_ref }}`
-            Cible : `${{ github.base_ref }}`
-
-            ### Solution
-            Créez une nouvelle PR depuis l'une des branches autorisées.
 
   python-checks:
     name: Python Format & Lint
