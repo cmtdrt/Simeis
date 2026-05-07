@@ -15,7 +15,7 @@ jobs:
           HEAD_BRANCH="${{ github.head_ref }}"
 
           # Règle: Les PRs vers les branches release/* doivent provenir de main ou bug/*
-          if [[ $BASE_BRANCH =~ ^release/ ]]; then
+          if [[ $BASE_BRANCH == release/* ]]; then
 
             # Valide si la branche source est main ou bug/*
             if [[ $HEAD_BRANCH == "main" || $HEAD_BRANCH =~ ^bug/ ]]; then
@@ -23,6 +23,10 @@ jobs:
             else
               exit 1
             fi
+
+          else
+            # Pour les autres branches, on n'impose aucune règle spécifique
+            exit 0
           fi
 
   python-checks:
