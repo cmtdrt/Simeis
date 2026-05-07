@@ -1,0 +1,55 @@
+name: PR Validation - Branch Rules
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  validate-branch:
+    name: Validate Branch Rules
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check branch naming rules
+        run: |
+          BASE_BRANCH="${{ github.base_ref }}"
+          HEAD_BRANCH="${{ github.head_ref }}"
+
+          # Règle: Les PRs vers les branches release/* doivent provenir de main ou bug/*
+          if [[ $BASE_BRANCH =~ ^release/ ]]; then
+
+            # Valide si la branche source est main ou bug/*
+            if [[ $HEAD_BRANCH == "main" || $HEAD_BRANCH =~ ^bug/ ]]; then
+              exit 0
+            else
+              exit 1
+            fi
+          fi
+
+      - name: Close PR if branch validation failed
+        if: failure()
+        uses: superbrothers/close-pull-request@v3
+        with:
+          delete-branch: false
+          comment: |
+            **Cette PR ne respecte pas les règles de branchement**
+
+            ### Problème
+            Les PRs ciblant `release/*` **doivent** provenir uniquement de :
+            - `main` (branche principale)
+            - `bug/*` (correctifs de bugs)
+
+            Branche actuelle : `${{ github.head_ref }}`
+            Cible : `${{ github.base_ref }}`
+
+            ### Solution
+            Créez une nouvelle PR depuis l'une des branches autorisées.
+
+  python-checks:
+    name: Python Format & Lint
+    needs: validate-branch
+    uses: ./.github/workflows/check_python_format.yaml
+
+  rust-checks:
+    name: Rust Build & Test
+    needs: validate-branch
+    uses: ./.github/workflows/pr-build-rust.yaml
