@@ -1,6 +1,7 @@
 import sys
 import time
 import random
+import math
 
 
 def create_property_based_test(f, regressions=[], time_test=10):
@@ -23,7 +24,6 @@ def create_property_based_test(f, regressions=[], time_test=10):
 
 
 ### Example
-import math
 
 
 def get_dist(a, b):
@@ -31,9 +31,9 @@ def get_dist(a, b):
 
 
 def addition():
-    x = random.randrange(0, 10000)
-    y = random.randrange(0, 10000)
-    z = random.randrange(0, 10000)
+    _x = random.randrange(0, 10000)
+    _y = random.randrange(0, 10000)
+    _z = random.randrange(0, 10000)
 
     # Exercice:    Tester les additions
 
@@ -42,12 +42,12 @@ def distance():
     x1 = random.randrange(-100, 100)
     y1 = random.randrange(-100, 100)
     z1 = random.randrange(-100, 100)
-    a = (x1, y1, z1)
+    _a = (x1, y1, z1)
 
     x2 = random.randrange(-100, 100)
     y2 = random.randrange(-100, 100)
     z2 = random.randrange(-100, 100)
-    b = (x2, y2, z2)
+    _b = (x2, y2, z2)
 
     # Exercice:     Tester la distance entre le point A et le point B
 

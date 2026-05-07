@@ -1,11 +1,11 @@
-PORT = 8080
-URL = f"http://0.0.0.0:{PORT}"
-
-import sys
-import os
 import json
+import os
+import sys
 import time
 import urllib.request
+
+PORT = 8080
+URL = f"http://0.0.0.0:{PORT}"
 
 if len(sys.argv) > 1:
     PLAYERS = sys.argv[1:]
@@ -50,6 +50,7 @@ def get(path):
             reply = urllib.request.urlopen(qry, timeout=10)
             break
         except Exception as err:
+            global HIST, INIT
             os.system("clear")
             HIST = {}
             INIT = False
@@ -81,7 +82,6 @@ def get_market():
 
 def disp_market(resources):
     market = get_market()
-    max_res_len = max([len(k) for k in market.keys()])
     disp = {}
     for res, price in market.items():
         if price is None or price < 0:
@@ -90,7 +90,6 @@ def disp_market(resources):
         MAX[res] = round(max(MAX[res], price), 2)
         relp = round((price / resources[res]["base-price"]) * 100, 2)
         price = round(price, 3)
-        space = " " * (1 + max_res_len - len(res))
 
         disp[res] = {
             "head": f"{price}",
@@ -108,7 +107,7 @@ def disp_market(resources):
     buffer = ""
     for res, d in disp.items():
         buffer += (
-            "{}{}{}{}{}{}{}".format(
+            "{}{}{}{}{}{}{}{}".format(
                 res,
                 " " * (max_res + 1 - len(res)),
                 d["head"],
