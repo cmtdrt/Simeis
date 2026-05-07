@@ -80,3 +80,4 @@ jobs:
               --title "chore: propagate PR #${PR_NUMBER} to ${release_branch}" \
               --body "Propagation automatique de la PR #${PR_NUMBER} vers \`${release_branch}\`.\n\n- Source: \`${PR_HEAD_REF}\`\n- Merge commit: \`${MERGE_SHA}\`" \
               --label "bot/propagate"
+          done
