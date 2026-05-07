@@ -8,8 +8,8 @@ permissions:
   contents: read
 
 jobs:
-  ruff-format:
-    name: Ruff format + lint
+  python_format_and_lint:
+    name: python_format_and_lint
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
