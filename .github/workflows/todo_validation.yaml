@@ -1,0 +1,47 @@
+name: Validate TODOs have associated issues
+
+on:
+  workflow_call:
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  validate-todos:
+    name: Validate TODOs have associated issues
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Validate TODOs
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Find all TODOs in Rust and Python files
+          todos=$(grep -rn "TODO" --include="*.rs" --include="*.py" . | grep -v "target/")
+
+          if [ -z "$todos" ]; then
+            echo "No TODOs found without associated issues."
+            exit 0
+          fi
+
+          # Check if each TODO has an associated issue number (TODO (#15))
+          while IFS= read -r todo; do
+            if ! echo "$todo" | grep -qP "TODO \(#\d+\)"; then
+              echo "TODO without associated issue found: $todo"
+              exit 1
+            fi
+          done <<< "$todos"
+
+          # Check if the referenced issues actually exist on GitHub and are open
+          while IFS= read -r todo; do
+            issue_number=$(echo "$todo" | grep -oP "TODO \(#\d+\)" | grep -oP "#\d+" | tr -d "#")
+            if ! gh issue view "$issue_number" --repo "${{ github.repository }}" --json state -q ".state" | grep -qi "open"; then
+              echo "Referenced issue #$issue_number is not open or does not exist for TODO: $todo"
+              exit 1
+            fi
+          done <<< "$todos"
+
+          echo "All TODOs have associated open issues."
+          exit 0
