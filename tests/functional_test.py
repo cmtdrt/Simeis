@@ -87,7 +87,7 @@ class SimeisFunctionalTest(unittest.TestCase):
         self.assertEqual(
             buy_ship_resp["id"],
             cheapest["id"],
-            "L identifiant du vaisseau acheté doit correspondre a celui choisi",
+            "L'identifiant du vaisseau acheté doit correspondre a celui choisi",
         )
 
         status_after = self.sdk.get_player_status()
@@ -145,7 +145,7 @@ class SimeisFunctionalTest(unittest.TestCase):
         cls = self.__class__
         ship_status = self.sdk.get_ship_status(cls.ship_id)
         self.assertIn(
-            "modules", ship_status, "Le vaisseaux doit contenir un champ module"
+            "modules", ship_status, "Le vaisseau doit contenir un champ modules"
         )
         self.assertTrue(
             any(
