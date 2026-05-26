@@ -1,0 +1,59 @@
+name: Check coverage on PR
+# Fonctionnement du workflow:
+# - Lorsqu'une PR est ouverte, le workflow vérifie le code coverage des tests.
+# - Si le code coverage est inférieur à 50%, le workflow ajoute un label "not enough tests" à la PR.
+# - Si le code coverage est supérieur ou égal à 50%, le workflow retire le label "not enough tests" de la PR (s'il était présent).
+on:
+  pull_request:
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  coverage:
+    name: Check code coverage
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install cargo-tarpaulin
+        run: cargo install cargo-tarpaulin
+
+      - name: Run tests with cargo-tarpaulin
+        id: tarpaulin
+        run: |
+          cargo tarpaulin --workspace 2>&1 | tee tarpaulin.log
+          COVERAGE=$(grep -oE '[0-9]+\.[0-9]+% coverage' tarpaulin.log \
+            | grep -oE '^[0-9]+\.[0-9]+' \
+            | head -1)
+          echo "coverage=${COVERAGE}" >> "$GITHUB_OUTPUT"
+          echo "Total coverage: ${COVERAGE}%"
+
+      - name: Label PR if coverage is below 50%
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          COVERAGE: ${{ steps.tarpaulin.outputs.coverage }}
+        run: |
+          set -euo pipefail
+
+          LABEL="not enough tests"
+
+          # Crée le label s'il n'existe pas encore dans le dépôt
+          if ! gh label list --json name --jq 'any(.[]; .name == "not enough tests")' | grep -q true; then
+            gh label create "${LABEL}" --color "e11d48" --description "Code coverage below 50%" || true
+          fi
+
+          BELOW=$(echo "${COVERAGE} < 50" | bc -l)
+          if [[ "${BELOW}" == "1" ]]; then
+            echo "Coverage ${COVERAGE}% is below 50% — adding label '${LABEL}'"
+            gh pr edit "${PR_NUMBER}" --add-label "${LABEL}"
+          else
+            echo "Coverage ${COVERAGE}% is sufficient — removing label '${LABEL}' if present"
+            gh pr edit "${PR_NUMBER}" --remove-label "${LABEL}" || true
+          fi
