@@ -41,8 +41,8 @@ jobs:
 
       - name: Run functional test script
         run: |
-          python -m py_compile tests/functionaltest.py
-          python tests/functionaltest.py
+          python -m py_compile tests/functional_test.py
+          python tests/functional_test.py
 
       - name: Stop Simeis server
         if: always()

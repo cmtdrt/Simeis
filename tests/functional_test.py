@@ -20,7 +20,7 @@ def unique_username():
 
 
 class SimeisFunctionalTest(unittest.TestCase):
-    """Liste des tests fonctionnels 
+    """Liste des tests fonctionnels
 
     Exemple de scénario :
     - On créé un nouveau joueur
@@ -41,9 +41,19 @@ class SimeisFunctionalTest(unittest.TestCase):
     def test_01_new_player_has_money(self):
         status = self.sdk.get_player_status()
 
-        self.assertGreater(status.get("money", 0), 0.0, "Le joueur doit commencer avec de l'argent")
-        self.assertEqual(len(status.get("ships", [])), 0, "Un nouveau joueur ne doit pas avoir de vaisseau")
-        self.assertGreater(len(status.get("stations", [])), 0, "Le joueur doit disposer d'au moins une station")
+        self.assertGreater(
+            status.get("money", 0), 0.0, "Le joueur doit commencer avec de l'argent"
+        )
+        self.assertEqual(
+            len(status.get("ships", [])),
+            0,
+            "Un nouveau joueur ne doit pas avoir de vaisseau",
+        )
+        self.assertGreater(
+            len(status.get("stations", [])),
+            0,
+            "Le joueur doit disposer d'au moins une station",
+        )
 
         cls = self.__class__
         cls.station_id = status["stations"][0]
@@ -52,10 +62,16 @@ class SimeisFunctionalTest(unittest.TestCase):
     def test_02_buy_ship(self):
         status_before = self.sdk.get_player_status()
         station_id = getattr(self.__class__, "station_id")
-        self.assertEqual(len(status_before["ships"]), 0, "Le joueur doit encore être sans vaisseau avant l'achat")
+        self.assertEqual(
+            len(status_before["ships"]),
+            0,
+            "Le joueur doit encore être sans vaisseau avant l'achat",
+        )
 
         ships = self.sdk.shop_list_ship(station_id)
-        self.assertGreater(len(ships), 0, "La boutique doit proposer au moins un vaisseau")
+        self.assertGreater(
+            len(ships), 0, "La boutique doit proposer au moins un vaisseau"
+        )
 
         cheapest = ships[0]
         self.assertLessEqual(
@@ -65,7 +81,9 @@ class SimeisFunctionalTest(unittest.TestCase):
         )
 
         buy_ship_resp = self.sdk.buy_ship(station_id, cheapest["id"])
-        self.assertIn("id", buy_ship_resp, "L'achat du vaisseau doit renvoyer un identifiant")
+        self.assertIn(
+            "id", buy_ship_resp, "L'achat du vaisseau doit renvoyer un identifiant"
+        )
         self.assertEqual(
             buy_ship_resp["id"],
             cheapest["id"],
@@ -92,16 +110,24 @@ class SimeisFunctionalTest(unittest.TestCase):
     def test_03_buy_miner_module(self):
         cls = self.__class__
         if not hasattr(cls, "ship_id"):
-            self.skipTest("Le vaisseau n'a pas été acheté, impossible de tester le module")
+            self.skipTest(
+                "Le vaisseau n'a pas été acheté, impossible de tester le module"
+            )
 
         modules = self.sdk.shop_list_modules(self.station_id)
         self.assertIn("Miner", modules, "Le magasin doit proposer un module mineur")
 
         module_cost = modules["Miner"]
-        buy_module_resp = self.sdk.buy_module_on_ship(self.station_id, self.ship_id, "Miner")
+        buy_module_resp = self.sdk.buy_module_on_ship(
+            self.station_id, self.ship_id, "Miner"
+        )
 
-        self.assertIn("id", buy_module_resp, "L'achat du module doit renvoyer un identifiants")
-        self.assertIn("cost", buy_module_resp, "L'achat du module doit renvoyer un coût")
+        self.assertIn(
+            "id", buy_module_resp, "L'achat du module doit renvoyer un identifiants"
+        )
+        self.assertIn(
+            "cost", buy_module_resp, "L'achat du module doit renvoyer un coût"
+        )
         cls.module_id = buy_module_resp["id"]
         self.assertEqual(
             buy_module_resp["cost"],
@@ -118,7 +144,9 @@ class SimeisFunctionalTest(unittest.TestCase):
 
         cls = self.__class__
         ship_status = self.sdk.get_ship_status(cls.ship_id)
-        self.assertIn("modules", ship_status, "Le vaisseaux doit contenir un champ module")
+        self.assertIn(
+            "modules", ship_status, "Le vaisseaux doit contenir un champ module"
+        )
         self.assertTrue(
             any(
                 module.get("modtype") == "Miner"
@@ -130,16 +158,26 @@ class SimeisFunctionalTest(unittest.TestCase):
     def test_04_hire_operator_and_assign_to_module(self):
         cls = self.__class__
         if not hasattr(cls, "ship_id"):
-            self.skipTest("Le vaisseau n'a pas été acheté, impossible de tester le recrutement")
+            self.skipTest(
+                "Le vaisseau n'a pas été acheté, impossible de tester le recrutement"
+            )
 
         hire_resp = self.sdk.hire_crew(self.station_id, "operator")
-        self.assertIn("id", hire_resp, "L'embauche doit renvoyer un identifiant de crew")
+        self.assertIn(
+            "id", hire_resp, "L'embauche doit renvoyer un identifiant de crew"
+        )
 
-        assign_resp = self.sdk.assign_crew_to_ship(self.station_id, cls.ship_id, hire_resp["id"], cls.module_id)
-        self.assertIsNotNone(assign_resp, "L'assignation du crew au module doit réussir")
+        assign_resp = self.sdk.assign_crew_to_ship(
+            self.station_id, cls.ship_id, hire_resp["id"], cls.module_id
+        )
+        self.assertIsNotNone(
+            assign_resp, "L'assignation du crew au module doit réussir"
+        )
 
         ship_status = self.sdk.get_ship_status(cls.ship_id)
-        self.assertIn("modules", ship_status, "Le vaisseaux doit contenir un champ module")
+        self.assertIn(
+            "modules", ship_status, "Le vaisseaux doit contenir un champ module"
+        )
         self.assertTrue(
             any(
                 module.get("operator") == hire_resp["id"]
@@ -161,5 +199,7 @@ class SimeisFunctionalTest(unittest.TestCase):
 
 if __name__ == "__main__":
     runner = unittest.TextTestRunner(verbosity=2)
-    result = runner.run(unittest.defaultTestLoader.loadTestsFromTestCase(SimeisFunctionalTest))
+    result = runner.run(
+        unittest.defaultTestLoader.loadTestsFromTestCase(SimeisFunctionalTest)
+    )
     sys.exit(0 if result.wasSuccessful() else 1)
