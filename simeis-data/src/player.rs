@@ -113,8 +113,8 @@ impl Player {
         if self.money < 0.0 && !self.lost {
             self.lost = true;
             syslog.event(self.id, SyslogEvent::GameLost).await;
-            // TODO (#10)  Allow to create a new game with the same name if old one lost
-            // TODO (#10)  What to do with its resources, ships, etc...
+            // TODO (#45)  Allow to create a new game with the same name if old one lost
+            // TODO (#45)  What to do with its resources, ships, etc...
         }
     }
 

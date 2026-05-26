@@ -6,7 +6,7 @@ use crate::GameState;
 
 pub type ApiResult = Result<Value, Errcode>;
 
-// TODO (#35) Pass complex requests via POST body instead of url
+// TODO (#45) Pass complex requests via POST body instead of url
 // - Navigation
 // - Upgrades
 
@@ -71,8 +71,8 @@ mod industry;
 mod shipyard;
 mod station_shop;
 
-// TODO (#35) Requires POST body implementation first
-// TODO (#36) Endpoints for all kinds of information
+// TODO (#45) Requires POST body implementation first
+// TODO (#45) Endpoints for all kinds of information
 // - Mining rate (+ wages cost) of a module, with a certain rank, with a certain operator rank, on a certain planet
 // - Traveling costs to a particular destination, from a particular source
 // - Prices of the upgrade of a module + its operator (from a source level to dest level), returns benefits, price, wages, etc...
@@ -80,7 +80,7 @@ mod station_shop;
 // - Resource requirements / production of an industry at a certain level
 // - Price, wage, benefits on ships stats when upgrading a pilot
 // - Price, wage, fee reduction when upgrading a trader
-// TODO (#37) Document greatly the API
+// TODO (#45) Document greatly the API
 
 pub fn configure(srv: &mut ServiceConfig) {
     system::configure(srv);
