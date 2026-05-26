@@ -1,1 +1,1 @@
-../../sdk/python.py
+from sdk.python import *

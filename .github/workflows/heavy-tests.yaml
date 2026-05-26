@@ -1,0 +1,52 @@
+name: Heavy Functional Tests
+
+on:
+  push:
+    branches:
+      - 'release/**'
+  pull_request:
+    branches:
+      - 'release/**'
+  workflow_dispatch: {}
+
+jobs:
+  heavy-functional-tests:
+    name: Heavy Functional Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Set up Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          profile: minimal
+          override: true
+
+      - name: Build Simeis server
+        run: cargo build --package simeis-server --quiet
+
+      - name: Start Simeis server in background
+        run: |
+          nohup cargo run --package simeis-server > server.log 2>&1 &
+          echo $! > server.pid
+          sleep 8
+
+      - name: Run functional test script
+        run: |
+          python -m py_compile tests/functionaltest.py
+          python tests/functionaltest.py
+
+      - name: Stop Simeis server
+        if: always()
+        run: |
+          if [ -f server.pid ]; then
+            kill "$(cat server.pid)" || true
+          fi
