@@ -1,1 +1,1 @@
-from sdk.python import *
+../../sdk/python.py
