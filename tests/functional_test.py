@@ -8,7 +8,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-from sdk.python import SimeisSDK # noqa: E402
+from sdk.python import SimeisSDK  # noqa: E402
 
 DEFAULT_HOST = os.environ.get("SIMEIS_HOST", "127.0.0.1")
 DEFAULT_PORT = int(os.environ.get("SIMEIS_PORT", "8080"))
