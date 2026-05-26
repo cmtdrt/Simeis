@@ -176,7 +176,7 @@ class SimeisFunctionalTest(unittest.TestCase):
 
         ship_status = self.sdk.get_ship_status(cls.ship_id)
         self.assertIn(
-            "modules", ship_status, "Le vaisseaux doit contenir un champ module"
+            "modules", ship_status, "Le vaisseaux doit contenir un champ modules"
         )
         self.assertTrue(
             any(
