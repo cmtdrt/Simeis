@@ -12,6 +12,10 @@ permissions:
   contents: write
   pull-requests: write
 
+# gh a besoin du dépôt explicite quand il n'y a pas de checkout (job discover-targets).
+env:
+  GH_REPO: ${{ github.repository }}
+
 jobs:
   # Première passe : lire les labels via gh et préparer la liste des release/x cibles.
   discover-targets:
@@ -27,6 +31,7 @@ jobs:
       # un job par branche release grâce à la matrix
       matrix: ${{ steps.targets.outputs.matrix }}
     steps:
+      # Pas de checkout ici : on interroge seulement l'API via gh (GH_REPO défini en tête de fichier).
       - name: Extraire les cibles depuis les labels de la PR
         id: targets
         env:
@@ -36,7 +41,7 @@ jobs:
           set -euo pipefail
 
           # Exemple : propagate:release/1.2 → release/1.2
-          targets_json="$(gh pr view "${PR_NUMBER}" --json labels --jq '[.labels[].name | select(startswith("propagate:release/")) | sub("^propagate:"; "")] | unique')"
+          targets_json="$(gh pr view "${PR_NUMBER}" --repo "${GH_REPO}" --json labels --jq '[.labels[].name | select(startswith("propagate:release/")) | sub("^propagate:"; "")] | unique')"
 
           if [[ "${targets_json}" == "[]" ]]; then
             echo "Aucun label propagate:release/* — rien à faire."
@@ -87,7 +92,7 @@ jobs:
           merge_sha="${MERGE_SHA}"
           # En rebase merge, merge_commit_sha peut être vide : gh récupère le commit effectif.
           if [[ -z "${merge_sha}" ]]; then
-            merge_sha="$(gh pr view "${PR_NUMBER}" --json mergeCommit --jq '.mergeCommit.oid // empty')"
+            merge_sha="$(gh pr view "${PR_NUMBER}" --repo "${GH_REPO}" --json mergeCommit --jq '.mergeCommit.oid // empty')"
           fi
           if [[ -z "${merge_sha}" ]]; then
             echo "Impossible de déterminer le commit mergé."
@@ -116,7 +121,7 @@ jobs:
           set -euo pipefail
 
           # Si une PR existe déjà pour cette paire head/base, on ne la recrée pas.
-          existing="$(gh pr list --base "${RELEASE_BRANCH}" --head "${WORK_BRANCH}" --json number --jq '.[0].number // empty')"
+          existing="$(gh pr list --repo "${GH_REPO}" --base "${RELEASE_BRANCH}" --head "${WORK_BRANCH}" --json number --jq '.[0].number // empty')"
           if [[ -n "${existing}" ]]; then
             echo "PR déjà ouverte : #${existing}"
             exit 0
@@ -128,6 +133,7 @@ jobs:
           - Merge commit : \`${MERGE_SHA}\`"
 
           gh pr create \
+            --repo "${GH_REPO}" \
             --base "${RELEASE_BRANCH}" \
             --head "${WORK_BRANCH}" \
             --title "chore: propagate PR #${PR_NUMBER} to ${RELEASE_BRANCH}" \
