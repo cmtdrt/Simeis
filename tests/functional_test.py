@@ -99,7 +99,7 @@ class SimeisFunctionalTest(unittest.TestCase):
         self.assertLess(
             status_after["money"],
             status_before["money"],
-            "L'argent du joueur doit diminué après l'achat du vaisseau",
+            "L'argent du joueur doit diminuer après l'achat du vaisseau",
         )
 
         cls = self.__class__
@@ -123,7 +123,7 @@ class SimeisFunctionalTest(unittest.TestCase):
         )
 
         self.assertIn(
-            "id", buy_module_resp, "L'achat du module doit renvoyer un identifiants"
+            "id", buy_module_resp, "L'achat du module doit renvoyer un identifiant"
         )
         self.assertIn(
             "cost", buy_module_resp, "L'achat du module doit renvoyer un coût"
@@ -152,7 +152,7 @@ class SimeisFunctionalTest(unittest.TestCase):
                 module.get("modtype") == "Miner"
                 for module in ship_status["modules"].values()
             ),
-            "Le vaisseau doit être équipés d'un modules mineur",
+            "Le vaisseau doit être équipé d'un modules mineur",
         )
 
     def test_04_hire_operator_and_assign_to_module(self):
@@ -176,7 +176,7 @@ class SimeisFunctionalTest(unittest.TestCase):
 
         ship_status = self.sdk.get_ship_status(cls.ship_id)
         self.assertIn(
-            "modules", ship_status, "Le vaisseaux doit contenir un champ modules"
+            "modules", ship_status, "Le vaisseau doit contenir un champ modules"
         )
         self.assertTrue(
             any(
