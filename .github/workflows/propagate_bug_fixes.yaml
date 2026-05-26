@@ -1,94 +1,140 @@
+# Quand une PR bug/* est mergée avec des labels propagate:release/x,
+# on ouvre une PR vers chaque branche release/x concernée (cherry-pick du merge).
 name: Propagate bugfixes to release branches
 
 on:
   pull_request:
-    types: [closed] # S'active à la fermeture d'une PR. (Pas nécessairement le merge, on va placer une vérification plus bas)
+    # Déclenché à la fermeture de la PR (merge ou non — on filtre le merge plus bas).
+    types: [closed]
 
 permissions:
+  # Nécessaire pour pousser la branche de propagation et créer la PR via gh.
   contents: write
   pull-requests: write
 
+# gh a besoin du dépôt explicite quand il n'y a pas de checkout (job discover-targets).
+env:
+  GH_REPO: ${{ github.repository }}
+
 jobs:
-  propagate:
-    name: Create propagation PRs (gh)
+  # Première passe : lire les labels via gh et préparer la liste des release/x cibles.
+  discover-targets:
+    name: Lister les branches release à alimenter
     runs-on: ubuntu-latest
-    # On propage uniquement sur les PR mergées qui sont sur des branches avec un nom commencant par bug/
+    # On ne s'intéresse qu'aux PR mergées depuis une branche bug/...
     if: >
       github.event.pull_request.merged == true &&
       startsWith(github.event.pull_request.head.ref, 'bug/')
+    outputs:
+      # true si au moins un label propagate:release/* a été trouvé
+      has_targets: ${{ steps.targets.outputs.has_targets }}
+      # un job par branche release grâce à la matrix
+      matrix: ${{ steps.targets.outputs.matrix }}
+    steps:
+      # Pas de checkout ici : on interroge seulement l'API via gh (GH_REPO défini en tête de fichier).
+      - name: Extraire les cibles depuis les labels de la PR
+        id: targets
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          set -euo pipefail
+
+          # Exemple : propagate:release/1.2 → release/1.2
+          targets_json="$(gh pr view "${PR_NUMBER}" --repo "${GH_REPO}" --json labels --jq '[.labels[].name | select(startswith("propagate:release/")) | sub("^propagate:"; "")] | unique')"
+
+          if [[ "${targets_json}" == "[]" ]]; then
+            echo "Aucun label propagate:release/* — rien à faire."
+            echo "has_targets=false" >> "$GITHUB_OUTPUT"
+            echo 'matrix={"include":[]}' >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "Branches release ciblées : ${targets_json}"
+
+          # branch_slug : variante sans / pour le nom de branche Git (propagate/pr-42-to-release-1-2).
+          matrix="$(echo "${targets_json}" | jq -c '{include: [.[] | {release_branch: ., branch_slug: (gsub("/"; "-"))}]}')"
+          echo "has_targets=true" >> "$GITHUB_OUTPUT"
+          echo "matrix=${matrix}" >> "$GITHUB_OUTPUT"
+
+  # Une exécution par branche release (ex. release/1.2 et release/2.0 en parallèle).
+  propagate:
+    name: Propager vers ${{ matrix.release_branch }}
+    needs: discover-targets
+    if: needs.discover-targets.outputs.has_targets == 'true'
+    runs-on: ubuntu-latest
+    strategy:
+      # Si la propagation vers release/1.2 échoue, on tente quand même release/2.0.
+      fail-fast: false
+      matrix: ${{ fromJson(needs.discover-targets.outputs.matrix) }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Configure git identity
+      - name: Identité Git pour les commits du bot
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-      - name: Propagate to labeled release branches
+      - name: Reporter le merge de la PR bug sur la branche release
+        id: apply
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          MERGE_SHA: ${{ github.event.pull_request.merge_commit_sha }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          RELEASE_BRANCH: ${{ matrix.release_branch }}
+          BRANCH_SLUG: ${{ matrix.branch_slug }}
+        run: |
+          set -euo pipefail
+
+          merge_sha="${MERGE_SHA}"
+          # En rebase merge, merge_commit_sha peut être vide : gh récupère le commit effectif.
+          if [[ -z "${merge_sha}" ]]; then
+            merge_sha="$(gh pr view "${PR_NUMBER}" --repo "${GH_REPO}" --json mergeCommit --jq '.mergeCommit.oid // empty')"
+          fi
+          if [[ -z "${merge_sha}" ]]; then
+            echo "Impossible de déterminer le commit mergé."
+            exit 1
+          fi
+          echo "merge_sha=${merge_sha}" >> "$GITHUB_OUTPUT"
+
+          work_branch="propagate/pr-${PR_NUMBER}-to-${BRANCH_SLUG}"
+
+          git fetch origin "${RELEASE_BRANCH}"
+          git switch -C "${work_branch}" "origin/${RELEASE_BRANCH}"
+          git cherry-pick "${merge_sha}"
+          git push -u origin "${work_branch}"
+
+          echo "work_branch=${work_branch}" >> "$GITHUB_OUTPUT"
+
+      - name: Ouvrir la PR de propagation
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
           PR_HEAD_REF: ${{ github.event.pull_request.head.ref }}
-          MERGE_SHA: ${{ github.event.pull_request.merge_commit_sha }}
+          RELEASE_BRANCH: ${{ matrix.release_branch }}
+          WORK_BRANCH: ${{ steps.apply.outputs.work_branch }}
+          MERGE_SHA: ${{ steps.apply.outputs.merge_sha }}
         run: |
           set -euo pipefail
 
-          if [[ -z "${MERGE_SHA}" ]]; then
-            echo "merge_commit_sha is empty. This workflow expects merge-commit or squash merges."
-            exit 1
-          fi
-
-          # Récupère les labels de la PR via gh, et extrait les cibles release/x.
-          targets_json="$(gh pr view "${PR_NUMBER}" --json labels --jq '[.labels[].name | select(startswith("propagate:release/")) | sub("^propagate:"; "")] | unique')"
-
-          if [[ "${targets_json}" == "[]" ]]; then
-            echo "No propagate:release/* label found. Nothing to do."
+          # Si une PR existe déjà pour cette paire head/base, on ne la recrée pas.
+          existing="$(gh pr list --repo "${GH_REPO}" --base "${RELEASE_BRANCH}" --head "${WORK_BRANCH}" --json number --jq '.[0].number // empty')"
+          if [[ -n "${existing}" ]]; then
+            echo "PR déjà ouverte : #${existing}"
             exit 0
           fi
 
-          echo "Targets: ${targets_json}"
+          body="Propagation automatique de la PR #${PR_NUMBER} vers \`${RELEASE_BRANCH}\`.
 
-          # Assure que le label "bot/propagate" existe (sinon la création de PR échoue).
-          if ! gh label list --search "bot/propagate" --json name --jq 'any(.[]; .name == "bot/propagate")' | grep -q true; then
-            echo "Label 'bot/propagate' not found. Creating it."
-            gh label create "bot/propagate" --color "1d4ed8" --description "Automated propagation PRs" || true
-          fi
+          - Source : \`${PR_HEAD_REF}\`
+          - Merge commit : \`${MERGE_SHA}\`"
 
-          # Boucle sur chaque branche release/x demandée par labels
-          echo "${targets_json}" | jq -r '.[]' | while read -r release_branch; do
-            echo ""
-            echo "=== Propagate PR #${PR_NUMBER} to ${release_branch} ==="
-
-            safe_release="${release_branch//\//-}"
-            work_branch="bot/propagate-pr-${PR_NUMBER}-to-${safe_release}"
-
-            git fetch origin "${release_branch}:${release_branch}"
-            git switch -C "${work_branch}" "${release_branch}"
-
-            # Applique le résultat final de la PR bug sur la branche release
-            git cherry-pick "${MERGE_SHA}"
-
-            git push -u origin "${work_branch}"
-
-            # Si une PR existe déjà pour cette head/base, on ne recrée pas.
-            existing="$(gh pr list --base "${release_branch}" --head "${work_branch}" --json number --jq '.[0].number // empty')"
-            if [[ -n "${existing}" ]]; then
-              echo "PR already exists: #${existing}"
-              continue
-            fi
-
-            gh pr create \
-              --base "${release_branch}" \
-              --head "${work_branch}" \
-              --title "chore: propagate PR #${PR_NUMBER} to ${release_branch}" \
-              --body "Propagation automatique de la PR #${PR_NUMBER} vers \`${release_branch}\`.\n\n- Source: \`${PR_HEAD_REF}\`\n- Merge commit: \`${MERGE_SHA}\`" \
-              --label "bot/propagate" || \
-              gh pr create \
-                --base "${release_branch}" \
-                --head "${work_branch}" \
-                --title "chore: propagate PR #${PR_NUMBER} to ${release_branch}" \
-                --body "Propagation automatique de la PR #${PR_NUMBER} vers \`${release_branch}\`.\n\n- Source: \`${PR_HEAD_REF}\`\n- Merge commit: \`${MERGE_SHA}\`"
-          done
+          gh pr create \
+            --repo "${GH_REPO}" \
+            --base "${RELEASE_BRANCH}" \
+            --head "${WORK_BRANCH}" \
+            --title "chore: propagate PR #${PR_NUMBER} to ${RELEASE_BRANCH}" \
+            --body "${body}"
