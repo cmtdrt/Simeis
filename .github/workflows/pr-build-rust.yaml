@@ -1,4 +1,4 @@
-name: PR Cargo Build / Test / Format / Documentation
+name: Build / Test / Format / Documentation
 
 on:
   workflow_call:
