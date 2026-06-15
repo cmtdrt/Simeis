@@ -120,7 +120,6 @@ if __name__ == "__main__":
                 time_addition = int(sys.argv[1])
                 time_distance = int(sys.argv[1])
             except ValueError:
-                print(f"Usage: python propertybased.py [heavy|<seconds>]")
                 sys.exit(1)
 
     regressions_addition = create_property_based_test(
