@@ -1,0 +1,48 @@
+name: Heavy Property-Based Tests
+
+on:
+  pull_request:
+    branches:
+      - 'release/**'
+    paths:
+      - 'tests/propertybased.py'
+      - 'simeis-data/**'
+      - 'simeis-server/**'
+      - '.github/workflows/heavy-property-based-test.yml.yml'
+  workflow_dispatch:
+  push:
+    branches:
+      - 'release/**'
+    paths:
+      - 'tests/propertybased.py'
+      - 'simeis-data/**'
+      - 'simeis-server/**'
+      - '.github/workflows/heavy-property-based-test.yml.yml'
+
+concurrency:
+  group: heavy-test-${{ github.ref }} 
+  cancel-in-progress: true
+
+jobs:
+  heavy-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      
+      - name: Run heavy property-based tests (<=5 min total)
+        run: |
+          python tests/propertybased.py heavy
+        timeout-minutes: 6
+      
+      - name: Commit regressions updates
+        if: always()
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: 'test: update regressions from heavy test run'
+          file_pattern: 'tests/regressions.json'
+          commit_options: '--no-verify'
