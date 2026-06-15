@@ -1,0 +1,30 @@
+name: Quick Property-Based Tests
+
+on:
+  pull_request:
+    paths:
+      - 'tests/propertybased.py'
+      - 'simeis-data/**'
+      - 'simeis-server/**'
+      - '.github/workflows/quick-test.yml'
+
+concurrency:
+  group: quick-test-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quick-test:
+    if: "!startsWith(github.base_ref, 'release')"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      
+      - name: Run quick property-based tests (5s each)
+        run: |
+          python tests/propertybased.py 5
+        timeout-minutes: 2
