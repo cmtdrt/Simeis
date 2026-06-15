@@ -46,13 +46,13 @@ def create_property_based_test(test_name, f, regressions=[], time_test=10):
             if seed not in found_errors:
                 found_errors.append(seed)
         i += 1
-    
+
     # Met à jour et sauvegarde les regressions
     if found_errors != regressions:
         known_regressions[test_name] = found_errors
         save_regressions(known_regressions)
         print(f"✓ Regressions sauvegardées pour {test_name}: {found_errors}")
-    
+
     return found_errors
 
 
@@ -70,7 +70,9 @@ def addition(seed):
 
     # Exercice:    Tester les additions
     expected_xy = _x + _y
-    assert expected_xy == _y + _x, f"[seed={seed}] Addition non commutative: {_x} + {_y} != {_y} + {_x}"
+    assert expected_xy == _y + _x, (
+        f"[seed={seed}] Addition non commutative: {_x} + {_y} != {_y} + {_x}"
+    )
     assert (_x + _y) + _z == _x + (_y + _z), (
         f"[seed={seed}] Addition non associative: ({_x} + {_y}) + {_z} != {_x} + ({_y} + {_z})"
     )
@@ -92,7 +94,9 @@ def distance(seed):
     dist_ab = get_dist(_a, _b)
     dist_ba = get_dist(_b, _a)
     assert dist_ab >= 0, f"[seed={seed}] Distance négative calculée: {dist_ab}"
-    assert dist_ab == dist_ba, f"[seed={seed}] Distance non symétrique: dist({_a}, {_b}) != dist({_b}, {_a})"
+    assert dist_ab == dist_ba, (
+        f"[seed={seed}] Distance non symétrique: dist({_a}, {_b}) != dist({_b}, {_a})"
+    )
 
     dx = x1 - x2
     dy = y1 - y2
@@ -106,7 +110,7 @@ def distance(seed):
 if __name__ == "__main__":
     time_addition = 3
     time_distance = 10
-    
+
     if len(sys.argv) > 1:
         if sys.argv[1] == "heavy":
             time_addition = 140  # ~2m20s
@@ -118,6 +122,16 @@ if __name__ == "__main__":
             except ValueError:
                 print(f"Usage: python propertybased.py [heavy|<seconds>]")
                 sys.exit(1)
-    
-    regressions_addition = create_property_based_test("addition", addition, regressions=known_regressions["addition"], time_test=time_addition)
-    regressions_distance = create_property_based_test("distance", distance, regressions=known_regressions["distance"] + [4480881574280375424], time_test=time_distance)
+
+    regressions_addition = create_property_based_test(
+        "addition",
+        addition,
+        regressions=known_regressions["addition"],
+        time_test=time_addition,
+    )
+    regressions_distance = create_property_based_test(
+        "distance",
+        distance,
+        regressions=known_regressions["distance"] + [4480881574280375424],
+        time_test=time_distance,
+    )
