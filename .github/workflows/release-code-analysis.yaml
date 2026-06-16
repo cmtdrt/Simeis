@@ -19,8 +19,9 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: stable 
+      - uses: dtolnay/rust-toolchain@nightly
       - run: cargo install cargo-audit cargo-udeps --locked
       - run: cargo test --all --features heavy-testing
       - run: cargo build --all --features heavy-testing
       - run: cargo audit
-      - run: cargo udeps
+      - run: cargo +nightly udeps
