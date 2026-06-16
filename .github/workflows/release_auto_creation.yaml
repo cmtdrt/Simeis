@@ -21,6 +21,15 @@ jobs:
     if: >
       github.event.pull_request.merged == true
     steps:
+      - name: Checkout du dépôt
+        uses: actions/checkout@v4
+        with:
+          # Nécessaire pour que l'action de release (Docker) puisse résoudre target_commit
+          # En mettant 0 on récupère l'historique complet du dépôt, pour être sur de récupérer le commit mergé.
+          fetch-depth: 0
+          # S'assurer d'être sur la branche de destination (release/x)
+          ref: ${{ github.event.pull_request.base.ref }}
+
       - name: Extraire la version depuis la branche cible
         id: version
         run: |
