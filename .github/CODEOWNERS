@@ -14,16 +14,16 @@
 
 # CI / CD
 
-.github/                @cmtdrt @matiasbellaud
-.github/workflows/      @cmtdrt @matiasbellaud
-Makefile                @cmtdrt @matiasbellaud
-*.yaml                 @cmtdrt @matiasbellaud
-CODEOWNERS              @cmtdrt @matiasbellaud
+.github/                @cmtdrt @matiasbellaud @FuzMaxime
+.github/workflows/      @cmtdrt @matiasbellaud @FuzMaxime
+Makefile                @cmtdrt @matiasbellaud @FuzMaxime
+*.yaml                 @cmtdrt @matiasbellaud @FuzMaxime
+CODEOWNERS              @cmtdrt @matiasbellaud @FuzMaxime
 
 # SiMEIS Server
 
-/simeis-server/ @cmtdrt
+/simeis-server/ @cmtdrt @FuzMaxime
 
 # Readme
 
-README.md @FuzMaxime
+README.md @cmtdrt @FuzMaxime @matiasbellaud

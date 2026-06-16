@@ -1,0 +1,44 @@
+# Quand une PR est mergée sur une branche release/x, on crée ou met à jour la release qui correspond
+name: Release auto creation
+
+on:
+  pull_request:
+    # Déclenché à la fermeture de la PR (branche mergée ou fermée — on vérifie si c'est bien un merge plus bas.
+    types: [closed]
+    # Seulement pour les branches release/*
+    branches:
+      - 'release/**'
+
+permissions:
+  # Nécessaire pour créer le tag et publier la release.
+  contents: write
+
+jobs:
+  release:
+    name: Créer ou mettre à jour la release
+    runs-on: ubuntu-latest
+    # S'assurer que la PR est bien mergée (et pas juste fermée)
+    if: >
+      github.event.pull_request.merged == true
+    steps:
+      - name: Extraire la version depuis la branche cible
+        id: version
+        run: |
+          # Objectif : extraire la version de la branche (release/0.0.1 → 0.0.1)
+          # On récupère le nom de la branche (release/0.0.1)
+          branch_name="${{ github.event.pull_request.base.ref }}"
+          # On retire le préfixe "release/" pour ne garder que la version (note: on aurait pu tout faire en une ligne)
+          version="${branch_name#release/}"
+          # Rendre la version accesssible pour le job suivant via ${{ steps.version.outputs.version }}
+          echo "version=${version}" >> "$GITHUB_OUTPUT"
+
+      - name: Créer ou mettre à jour la release
+        uses: mini-bomba/create-github-release@v1.2.0
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          tag: ${{ steps.version.outputs.version }}
+          name: Release ${{ steps.version.outputs.version }}
+          body: |
+            Release automatique après le merge de la PR sur `${{ github.event.pull_request.base.ref }}`.
+          # On récupère le sha du commit mergé
+          target_commit: ${{ github.event.pull_request.merge_commit_sha }}
