@@ -52,7 +52,7 @@ jobs:
           echo "Récupération des PRs mergées sur $branch_name..."
           
           # On récupère la liste des PRs en séparant les informations par un pipe "|" : nom_de_branche|titre|url avec une limite de 100 PRs
-          prs_infos=$(gh pr list --state merged --base "$branch_name" --repo "${{ github.repository }}" --limit 100 --template '{{range .}}{{printf "%s|%s|%s\n" .headRefName .title .url}}{{end}}')
+          prs_infos=$(gh pr list --state merged --base "$branch_name" --repo "${{ github.repository }}" --limit 100 --json headRefName,title,url --template '{{range .}}{{printf "%s|%s|%s\n" .headRefName .title .url}}{{end}}')
           
           # features sera toujours vide parce que les règles bloquent les PRs feature sur la branche release (les features doivent passer par main)
           features=""
