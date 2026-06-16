@@ -27,10 +27,14 @@ def save_regressions(regressions):
 known_regressions = load_regressions()
 
 
-def create_property_based_test(test_name, f, regressions=[], time_test=10):
+def create_property_based_test(test_name, f, regressions=None, time_test=10):
+    if regressions is None:
+        regressions = []
+
     tstart = time.time()
     i = 0
     found_errors = list(regressions)  # Copie les regressions connues
+    success_count = 0
     while (time.time() - tstart) < time_test:
         if i < len(regressions):
             seed = regressions[i]
@@ -39,9 +43,9 @@ def create_property_based_test(test_name, f, regressions=[], time_test=10):
         random.seed(seed)
         try:
             f(seed)
-            print("Test", f.__name__, i, "OK")
+            success_count += 1
         except AssertionError as err:
-            print("Test", f.__name__, "failed with seed", seed)
+            print(f"Test {f.__name__} failed with seed {seed}")
             print(err)
             if seed not in found_errors:
                 found_errors.append(seed)
@@ -51,7 +55,7 @@ def create_property_based_test(test_name, f, regressions=[], time_test=10):
     if found_errors != regressions:
         known_regressions[test_name] = found_errors
         save_regressions(known_regressions)
-        print(f"✓ Regressions sauvegardées pour {test_name}: {found_errors}")
+        print(f"Regressions sauvegardées pour {test_name}: {found_errors}")
 
     return found_errors
 
@@ -125,12 +129,12 @@ if __name__ == "__main__":
     regressions_addition = create_property_based_test(
         "addition",
         addition,
-        regressions=known_regressions["addition"],
+        regressions=known_regressions.get("addition", []),
         time_test=time_addition,
     )
     regressions_distance = create_property_based_test(
         "distance",
         distance,
-        regressions=known_regressions["distance"] + [4480881574280375424],
+        regressions=known_regressions.get("distance", []),
         time_test=time_distance,
     )

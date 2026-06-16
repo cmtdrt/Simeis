@@ -8,7 +8,7 @@ on:
       - 'tests/propertybased.py'
       - 'simeis-data/**'
       - 'simeis-server/**'
-      - '.github/workflows/heavy-property-based-test.yml.yml'
+      - '.github/workflows/heavy-property-based-test.yaml'
   workflow_dispatch:
   push:
     branches:
@@ -17,7 +17,7 @@ on:
       - 'tests/propertybased.py'
       - 'simeis-data/**'
       - 'simeis-server/**'
-      - '.github/workflows/heavy-property-based-test.yml.yml'
+      - '.github/workflows/heavy-property-based-test.yaml'
 
 concurrency:
   group: heavy-test-${{ github.ref }} 
@@ -26,17 +26,18 @@ concurrency:
 jobs:
   heavy-test:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write # Requis pour que le bot puisse commit le fichier regressions.json
     steps:
       - uses: actions/checkout@v4
       
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: '3.11'
       
       - name: Run heavy property-based tests (<=5 min total)
-        run: |
-          python tests/propertybased.py heavy
+        run: python tests/propertybased.py heavy
         timeout-minutes: 6
       
       - name: Commit regressions updates

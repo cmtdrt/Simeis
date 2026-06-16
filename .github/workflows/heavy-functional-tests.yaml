@@ -35,9 +35,10 @@ jobs:
 
       - name: Start Simeis server in background
         run: |
-          nohup cargo run --package simeis-server > server.log 2>&1 &
+          cargo run --package simeis-server > server.log 2>&1 &
           echo $! > server.pid
-          sleep 8
+          # Attendre que le serveur soit prêt à accepter les connexions
+          sleep 5
 
       - name: Run functional test script
         run: |

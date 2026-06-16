@@ -44,13 +44,11 @@ jobs:
 
           LABEL="not enough tests"
 
-          # Crée le label s'il n'existe pas encore dans le dépôt
-          if ! gh label list --json name --jq 'any(.[]; .name == "not enough tests")' | grep -q true; then
-            gh label create "${LABEL}" --color "e11d48" --description "Code coverage below 50%" || true
-          fi
+          # Crée le label (si déjà existant, l'erreur est avalée par || true)
+          gh label create "${LABEL}" --color "e11d48" --description "Code coverage below 50%" || true
 
-          BELOW=$(echo "${COVERAGE} < 50" | bc -l)
-          if [[ "${BELOW}" == "1" ]]; then
+          IS_BELOW=$(python -c "print(1 if ${COVERAGE} < 50.0 else 0)")
+          if [[ "${IS_BELOW}" == "1" ]]; then
             echo "Coverage ${COVERAGE}% is below 50% — adding label '${LABEL}'"
             gh pr edit "${PR_NUMBER}" --add-label "${LABEL}"
           else
