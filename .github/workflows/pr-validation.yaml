@@ -14,20 +14,13 @@ jobs:
           BASE_BRANCH="${{ github.base_ref }}"
           HEAD_BRANCH="${{ github.head_ref }}"
 
-          # Règle: Les PRs vers les branches release/* doivent provenir de main ou bug/*
-          if [[ $BASE_BRANCH == release/* ]]; then
-
-            # Valide si la branche source est main ou bug/*
-            if [[ $HEAD_BRANCH == "main" || $HEAD_BRANCH =~ ^bug/ ]]; then
-              exit 0
-            else
+          if [[ "$BASE_BRANCH" == release/* ]]; then
+            if [[ "$HEAD_BRANCH" != "main" && "$HEAD_BRANCH" != bug/* ]]; then
+              echo "Erreur : Les PRs vers release/* doivent provenir de main ou bug/*"
               exit 1
             fi
-
-          else
-            # Pour les autres branches, on n'impose aucune règle spécifique
-            exit 0
           fi
+          echo "Nom de branche valide."
 
   python-checks:
     name: Python Format & Lint
