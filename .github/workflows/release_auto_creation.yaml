@@ -12,6 +12,8 @@ on:
 permissions:
   # Nécessaire pour créer le tag et publier la release.
   contents: write
+  # Nécessaire pour lister et lire les Pull Requests
+  pull-requests: read
 
 jobs:
   release:
@@ -41,6 +43,52 @@ jobs:
           # Rendre la version accesssible pour le job suivant via ${{ steps.version.outputs.version }}
           echo "version=${version}" >> "$GITHUB_OUTPUT"
 
+      - name: Générer le changelog
+        id: changelog
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          branch_name="${{ github.event.pull_request.base.ref }}"
+          echo "Récupération des PRs mergées sur $branch_name..."
+          
+          # On récupère la liste des PRs en séparant les informations par un pipe "|" : nom_de_branche|titre|url avec une limite de 100 PRs
+          prs_infos=$(gh pr list --state merged --base "$branch_name" --repo "${{ github.repository }}" --limit 100 --template '{{range .}}{{printf "%s|%s|%s\n" .headRefName .title .url}}{{end}}')
+          
+          # features sera toujours vide parce que les règles bloquent les PRs feature sur la branche release (les features doivent passer par main)
+          features=""
+          bugs=""
+          autres=""
+          
+          # On lit le texte ligne par ligne en coupant à chaque pipe (IFS='|')
+          while IFS='|' read -r head_ref title url; do
+            if [ -z "$title" ]; then continue; fi
+            
+            # On crée la ligne à afficher
+            ligne="- $title ($url)"
+            
+            # Tri par catégorie selon le nom de la branche d'origine
+            if [[ "$head_ref" == feature/* ]]; then
+              features="$features$ligne"$'\n'
+            elif [[ "$head_ref" == bug/* ]] || [[ "$head_ref" == propagate/* ]]; then
+              bugs="$bugs$ligne"$'\n'
+            else
+              autres="$autres$ligne"$'\n'
+            fi
+          done <<< "$prs_infos"
+          
+          # Construction du texte final
+          changelog="## Changelog"$'\n'
+          if [ -n "$features" ]; then changelog="$changelog"$'\n'"### Features"$'\n'"$features"; fi
+          if [ -n "$bugs" ]; then changelog="$changelog"$'\n'"### Bugfix"$'\n'"$bugs"; fi
+          if [ -n "$autres" ];   then changelog="$changelog"$'\n'"### Autre(s)"$'\n'"$autres"; fi
+          
+          # Sauvegarde du texte généré pour l'étape suivante
+          {
+            echo "content<<EOF"
+            echo "$changelog"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
       - name: Créer ou mettre à jour la release
         uses: mini-bomba/create-github-release@v1.2.0
         with:
@@ -49,5 +97,7 @@ jobs:
           name: Release ${{ steps.version.outputs.version }}
           body: |
             Release automatique après le merge de la PR sur `${{ github.event.pull_request.base.ref }}`.
+            
+            ${{ steps.changelog.outputs.content }}
           # On récupère le sha du commit mergé
           target_commit: ${{ github.event.pull_request.merge_commit_sha }}
