@@ -89,7 +89,17 @@ jobs:
             echo "EOF"
           } >> "$GITHUB_OUTPUT"
 
+      - name: Build release binary
+        run: cargo build --release
+
+      - name: Install Typst
+        uses: typst-community/setup-typst@v3
+
+      - name: Build user manual
+        run: make doc
+
       - name: Créer ou mettre à jour la release
+        id: release
         uses: mini-bomba/create-github-release@v1.2.0
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
@@ -99,5 +109,44 @@ jobs:
             Release automatique après le merge de la PR sur `${{ github.event.pull_request.base.ref }}`.
             
             ${{ steps.changelog.outputs.content }}
-          # On récupère le sha du commit mergé
           target_commit: ${{ github.event.pull_request.merge_commit_sha }}
+
+      - name: Upload release asset: server binary
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.release.outputs.upload_url }}
+          asset_path: target/release/simeis-server
+          asset_name: simeis-server
+          asset_content_type: application/octet-stream
+
+      - name: Upload release asset: user manual
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.release.outputs.upload_url }}
+          asset_path: doc/manuel_utilisateur.pdf
+          asset_name: manuel_utilisateur.pdf
+          asset_content_type: application/pdf
+
+      - name: Upload release asset: Swagger JSON
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.release.outputs.upload_url }}
+          asset_path: doc/swagger.json
+          asset_name: swagger.json
+          asset_content_type: application/json
+
+      - name: Upload release asset: Swagger UI
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.release.outputs.upload_url }}
+          asset_path: doc/swagger-ui.html
+          asset_name: swagger-ui.html
+          asset_content_type: text/html
