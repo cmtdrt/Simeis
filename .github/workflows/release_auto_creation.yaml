@@ -111,7 +111,7 @@ jobs:
             ${{ steps.changelog.outputs.content }}
           target_commit: ${{ github.event.pull_request.merge_commit_sha }}
 
-      - name: Upload release asset: server binary
+      - name: Upload release asset server binary
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -121,7 +121,7 @@ jobs:
           asset_name: simeis-server
           asset_content_type: application/octet-stream
 
-      - name: Upload release asset: user manual
+      - name: Upload release asset user manual
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -131,7 +131,7 @@ jobs:
           asset_name: manuel_utilisateur.pdf
           asset_content_type: application/pdf
 
-      - name: Upload release asset: Swagger JSON
+      - name: Upload release asset Swagger JSON
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -141,7 +141,7 @@ jobs:
           asset_name: swagger.json
           asset_content_type: application/json
 
-      - name: Upload release asset: Swagger UI
+      - name: Upload release asset Swagger UI
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
