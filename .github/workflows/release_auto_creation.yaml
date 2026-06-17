@@ -122,6 +122,7 @@ jobs:
             Release automatique après le merge de la PR sur `${{ github.event.pull_request.base.ref }}`.
             
             ${{ steps.changelog.outputs.content }}
+          # Ternaire pour sélectionner le commit à partir duquel on veut créer la release
           target_commit: ${{ github.event_name == 'create' && github.sha || github.event.pull_request.merge_commit_sha }}
           files: |
             target/release/simeis-server
