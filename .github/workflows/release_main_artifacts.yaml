@@ -34,7 +34,7 @@ jobs:
         run: make doc
 
       # Upload release binary
-      - name: Upload release asset: server binary
+      - name: Upload release asset server binary
         uses: actions/upload-release-asset@v4
         with:
           upload_url: ${{ github.event.release.upload_url }}
@@ -44,7 +44,7 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
 
       # Upload release manual
-      - name: Upload release asset: user manual
+      - name: Upload release asset user manual
         uses: actions/upload-release-asset@v4
         with:
           upload_url: ${{ github.event.release.upload_url }}
@@ -54,7 +54,7 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
 
       # Upload release swagger.json
-      - name: Upload release asset: Swagger JSON
+      - name: Upload release asset Swagger JSON
         uses: actions/upload-release-asset@v4
         with:
           upload_url: ${{ github.event.release.upload_url }}
@@ -64,7 +64,7 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
 
       # Upload release swagger UI
-      - name: Upload release asset: Swagger UI
+      - name: Upload release asset Swagger UI
         uses: actions/upload-release-asset@v4
         with:
           upload_url: ${{ github.event.release.upload_url }}

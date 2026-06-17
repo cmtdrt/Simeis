@@ -110,43 +110,8 @@ jobs:
             
             ${{ steps.changelog.outputs.content }}
           target_commit: ${{ github.event.pull_request.merge_commit_sha }}
-
-      - name: Upload release asset server binary
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.release.outputs.upload_url }}
-          asset_path: target/release/simeis-server
-          asset_name: simeis-server
-          asset_content_type: application/octet-stream
-
-      - name: Upload release asset user manual
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.release.outputs.upload_url }}
-          asset_path: doc/manuel_utilisateur.pdf
-          asset_name: manuel_utilisateur.pdf
-          asset_content_type: application/pdf
-
-      - name: Upload release asset Swagger JSON
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.release.outputs.upload_url }}
-          asset_path: doc/swagger.json
-          asset_name: swagger.json
-          asset_content_type: application/json
-
-      - name: Upload release asset Swagger UI
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.release.outputs.upload_url }}
-          asset_path: doc/swagger-ui.html
-          asset_name: swagger-ui.html
-          asset_content_type: text/html
+          files: |
+            target/release/simeis-server
+            doc/manuel_utilisateur.pdf
+            doc/swagger.json
+            doc/swagger-ui.html
