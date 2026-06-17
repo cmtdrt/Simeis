@@ -1,4 +1,5 @@
 # Quand une PR est mergée sur une branche release/x, on crée ou met à jour la release qui correspond
+# Ou quand une branche release/* est créée
 name: Release auto creation
 
 on:
@@ -8,6 +9,7 @@ on:
     # Seulement pour les branches release/*
     branches:
       - 'release/**'
+  create:
 
 permissions:
   # Nécessaire pour créer le tag et publier la release.
@@ -19,9 +21,12 @@ jobs:
   release:
     name: Créer ou mettre à jour la release
     runs-on: ubuntu-latest
-    # S'assurer que la PR est bien mergée (et pas juste fermée)
+    # S'assurer que la PR est bien mergée (et pas juste fermée), ou que c'est bien une branche release/* qui est créée
     if: >
-      github.event.pull_request.merged == true
+      (github.event_name == 'pull_request' &&
+       github.event.pull_request.merged == true) ||
+      (github.event_name == 'create' &&
+       startsWith(github.ref, 'refs/heads/release/'))
     steps:
       - name: Checkout du dépôt
         uses: actions/checkout@v4
@@ -30,14 +35,18 @@ jobs:
           # En mettant 0 on récupère l'historique complet du dépôt, pour être sur de récupérer le commit mergé.
           fetch-depth: 0
           # S'assurer d'être sur la branche de destination (release/x)
-          ref: ${{ github.event.pull_request.base.ref }}
+          ref: ${{ github.event_name == 'create' && github.ref_name || github.event.pull_request.base.ref }}
 
       - name: Extraire la version depuis la branche cible
         id: version
         run: |
           # Objectif : extraire la version de la branche (release/0.0.1 → 0.0.1)
           # On récupère le nom de la branche (release/0.0.1)
-          branch_name="${{ github.event.pull_request.base.ref }}"
+          if [ "${{ github.event_name }}" = "create" ]; then
+            branch_name="${{ github.ref_name }}"
+          else
+            branch_name="${{ github.event.pull_request.base.ref }}"
+          fi
           # On retire le préfixe "release/" pour ne garder que la version (note: on aurait pu tout faire en une ligne)
           version="${branch_name#release/}"
           # Rendre la version accesssible pour le job suivant via ${{ steps.version.outputs.version }}
@@ -48,7 +57,11 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          branch_name="${{ github.event.pull_request.base.ref }}"
+          if [ "${{ github.event_name }}" = "create" ]; then
+            branch_name="${{ github.ref_name }}"
+          else
+            branch_name="${{ github.event.pull_request.base.ref }}"
+          fi
           echo "Récupération des PRs mergées sur $branch_name..."
           
           # On récupère la liste des PRs en séparant les informations par un pipe "|" : nom_de_branche|titre|url avec une limite de 100 PRs
@@ -109,44 +122,10 @@ jobs:
             Release automatique après le merge de la PR sur `${{ github.event.pull_request.base.ref }}`.
             
             ${{ steps.changelog.outputs.content }}
-          target_commit: ${{ github.event.pull_request.merge_commit_sha }}
-
-      - name: Upload release asset: server binary
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.release.outputs.upload_url }}
-          asset_path: target/release/simeis-server
-          asset_name: simeis-server
-          asset_content_type: application/octet-stream
-
-      - name: Upload release asset: user manual
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.release.outputs.upload_url }}
-          asset_path: doc/manuel_utilisateur.pdf
-          asset_name: manuel_utilisateur.pdf
-          asset_content_type: application/pdf
-
-      - name: Upload release asset: Swagger JSON
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.release.outputs.upload_url }}
-          asset_path: doc/swagger.json
-          asset_name: swagger.json
-          asset_content_type: application/json
-
-      - name: Upload release asset: Swagger UI
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.release.outputs.upload_url }}
-          asset_path: doc/swagger-ui.html
-          asset_name: swagger-ui.html
-          asset_content_type: text/html
+          # Ternaire pour sélectionner le commit à partir duquel on veut créer la release
+          target_commit: ${{ github.event_name == 'create' && github.sha || github.event.pull_request.merge_commit_sha }}
+          files: |
+            target/release/simeis-server
+            doc/manuel_utilisateur.pdf
+            doc/swagger.json
+            doc/swagger-ui.html
