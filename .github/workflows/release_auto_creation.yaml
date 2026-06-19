@@ -103,7 +103,28 @@ jobs:
           } >> "$GITHUB_OUTPUT"
 
       - name: Build release binary
-        run: cargo build --release
+        run: cargo build --release --package simeis-server
+
+      - name: Build Debian package
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          PKG_ROOT="packaging/simeis-deb"
+          DEB_FILE="simeis_${VERSION}_amd64.deb"
+
+          mkdir -p "$PKG_ROOT/DEBIAN" "$PKG_ROOT/usr/bin"
+          cp target/release/simeis-server "$PKG_ROOT/usr/bin/"
+          # Permission d'exécution pour le fichier simeis-server
+          chmod 755 "$PKG_ROOT/usr/bin/simeis-server"
+          # Création du fichier control
+          {
+            echo "Package: Simeis"
+            echo "Version: ${VERSION}"
+            echo "Architecture: amd64"
+            echo "Maintainer: Maxime maximefuzeau3@gmail.com"
+            echo "Description: Simeis est un serveur API de jeu de gestion."
+          } > "$PKG_ROOT/DEBIAN/control"
+
+          dpkg-deb --root-owner-group --build "$PKG_ROOT" "$DEB_FILE"
 
       - name: Install Typst
         uses: typst-community/setup-typst@v3
@@ -126,6 +147,7 @@ jobs:
           target_commit: ${{ github.event_name == 'create' && github.sha || github.event.pull_request.merge_commit_sha }}
           files: |
             target/release/simeis-server
+            simeis_${{ steps.version.outputs.version }}_amd64.deb
             doc/manuel_utilisateur.pdf
             doc/swagger.json
             doc/swagger-ui.html
