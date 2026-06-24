@@ -27,6 +27,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        # On met fetch-depth à 0 pour récupérer l'historique complet du dépôt, afin de pouvoir vérifier les changements dans les fichiers Cargo.lock.
         with:
           fetch-depth: 0
 
