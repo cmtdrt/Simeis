@@ -102,19 +102,13 @@ jobs:
             echo "EOF"
           } >> "$GITHUB_OUTPUT"
 
-      - name: change version project to release version
-        run: |
-          # récupérer la version de release depuis l'étape précédente
-          VERSION="${{ steps.version.outputs.version }}" 
-
-          # mettre à jour la version dans Cargo.toml
-          sed -i "s/^version[[:space:]]*=[[:space:]]*\".*\"/version = \"${VERSION}\"/" simeis-server/Cargo.toml 
-
-          # vérifier que la version a bien été écrite
-          grep -q "^version[[:space:]]*=[[:space:]]*\"${VERSION}\"" simeis-server/Cargo.toml 
 
       - name: Build release binary
         run: cargo build --release --package simeis-server
+
+      - name: Mettre à jour la version du projet
+        run: |
+          cargo set-version "${VERSION}"
 
       - name: Build Debian package
         run: |
