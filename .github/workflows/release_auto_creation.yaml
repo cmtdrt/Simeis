@@ -104,9 +104,14 @@ jobs:
 
       - name: change version project to release version
         run: |
-          VERSION=${VERSION}
-          sed -i "s/^version[[:space:]]*=[[:space:]]*\".*\"/version = \"${VERSION}\"/" simeis-server/Cargo.toml
-          grep -q "^version[[:space:]]*=[[:space:]]*\"${VERSION}\"" simeis-server/Cargo.toml
+          # récupérer la version de release depuis l'étape précédente
+          VERSION="${{ steps.version.outputs.version }}" 
+
+          # mettre à jour la version dans Cargo.toml
+          sed -i "s/^version[[:space:]]*=[[:space:]]*\".*\"/version = \"${VERSION}\"/" simeis-server/Cargo.toml 
+
+          # vérifier que la version a bien été écrite
+          grep -q "^version[[:space:]]*=[[:space:]]*\"${VERSION}\"" simeis-server/Cargo.toml 
 
       - name: Build release binary
         run: cargo build --release --package simeis-server
