@@ -1,0 +1,26 @@
+set -e
+
+USER="student"
+SERVICE="simeis.service"
+
+case "$1" in
+    configure)
+        # Créer l'utilisateur système dédié s'il n'existe pas déjà
+        if ! getent passwd "$USER" > /dev/null; then
+            useradd --system --no-create-home --shell /usr/sbin/nologin "$USER"
+        fi
+
+        # Recharger systemd et démarrer le service
+        systemctl daemon-reload
+        systemctl enable "$SERVICE"
+        systemctl restart "$SERVICE"
+        ;;
+    abort-upgrade|abort-remove|abort-deconfigure)
+        ;;
+    *)
+        echo "postinst appelé avec un argument inconnu : $1" >&2
+        exit 1
+        ;;
+esac
+
+exit 0`
