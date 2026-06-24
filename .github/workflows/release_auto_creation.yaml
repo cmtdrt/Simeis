@@ -52,6 +52,11 @@ jobs:
           # Rendre la version accesssible pour le job suivant via ${{ steps.version.outputs.version }}
           echo "version=${version}" >> "$GITHUB_OUTPUT"
 
+      - name: Mettre à jour la version du projet
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          cargo set-version "${VERSION}"
+
       - name: Générer le changelog
         id: changelog
         env:
@@ -105,10 +110,6 @@ jobs:
 
       - name: Build release binary
         run: cargo build --release --package simeis-server
-
-      - name: Mettre à jour la version du projet
-        run: |
-          cargo set-version "${VERSION}"
 
       - name: Build Debian package
         run: |
