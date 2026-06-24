@@ -126,7 +126,7 @@ jobs:
           } > "debian/DEBIAN/control"
           chmod 755 "debian/DEBIAN/control"
           chmod 755 "debian/DEBIAN/postinst"
-          chmod 755 "debian/DEBIAN/etc/systemd/system/simeis.service"
+          chmod 755 "debian/etc/systemd/system/simeis.service"
           
           dpkg-deb --root-owner-group --build "debian" "$DEB_FILE"
 
