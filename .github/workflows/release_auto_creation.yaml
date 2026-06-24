@@ -104,17 +104,14 @@ jobs:
 
       - name: change version project to release version
         run: |
-          VERSION="${{ steps.version.outputs.version }}"
-          python3 - <<'PY'
-          import pathlib, re, sys
-          path = pathlib.Path('simeis-server/Cargo.toml')
-          text = path.read_text(encoding='utf-8')
-          new = re.sub(r'^(version\s*=\s*")([^"]+)(")', rf'\1{VERSION}\3', text, flags=re.MULTILINE)
-          if text == new:
-              print('Could not find version field in simeis-server/Cargo.toml', file=sys.stderr)
-              sys.exit(1)
-          path.write_text(new, encoding='utf-8')
-          PY
+          # récupérer la version de release depuis l'étape précédente
+          VERSION="${{ steps.version.outputs.version }}" 
+
+          # mettre à jour la version dans Cargo.toml
+          sed -i "s/^version[[:space:]]*=[[:space:]]*\".*\"/version = \"${VERSION}\"/" simeis-server/Cargo.toml 
+
+          # vérifier que la version a bien été écrite
+          grep -q "^version[[:space:]]*=[[:space:]]*\"${VERSION}\"" simeis-server/Cargo.toml 
 
       - name: Build release binary
         run: cargo build --release --package simeis-server
