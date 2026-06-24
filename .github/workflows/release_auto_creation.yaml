@@ -110,9 +110,9 @@ jobs:
           VERSION="${{ steps.version.outputs.version }}"
           DEB_FILE="simeis_${VERSION}_amd64.deb"
 
-          mkdir -p"debian/usr/bin"
+          mkdir -p "debian/usr/bin"
           cp target/release/simeis-server "debian/usr/bin/"
-          
+
           # Permission d'exécution pour le fichier simeis-server
           chmod 755 "debian/usr/bin/simeis-server"
 
