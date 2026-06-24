@@ -55,6 +55,7 @@ jobs:
       - name: Mettre à jour la version du projet
         run: |
           VERSION="${{ steps.version.outputs.version }}"
+          cargo install cargo-set-version
           cargo set-version "${VERSION}"
 
       - name: Générer le changelog
