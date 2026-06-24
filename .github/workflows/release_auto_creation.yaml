@@ -143,6 +143,16 @@ jobs:
       - name: Build user manual
         run: make doc
 
+      - name: Build Docker image
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          docker build -f .github/Dockerfile -t "simeis-server:${VERSION}" .
+
+      - name: Export Docker image
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          docker image save "simeis-server:${VERSION}" -o "simeis_eva_${VERSION}_docker.tar"
+
       - name: Créer ou mettre à jour la release
         id: release
         uses: mini-bomba/create-github-release@v1.2.0
@@ -159,6 +169,7 @@ jobs:
           files: |
             target/release/simeis-server
             simeis_eva_${{ steps.version.outputs.version }}_amd64.deb
+            simeis_eva_${{ steps.version.outputs.version }}_docker.tar
             doc/manuel_utilisateur.pdf
             doc/swagger.json
             doc/swagger-ui.html

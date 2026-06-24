@@ -1,0 +1,7 @@
+target/
+.git/
+doc/
+debian/
+example/
+sdk/
+test.txt
