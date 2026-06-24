@@ -10,7 +10,7 @@ case "$1" in
             useradd --system --no-create-home --shell /usr/sbin/nologin "$USER"
         fi
 
-        # Recharger systemd et démarrer le service
+        # Recharger le systemd et démarrer le service
         systemctl daemon-reload
         systemctl enable "$SERVICE"
         systemctl restart "$SERVICE"
