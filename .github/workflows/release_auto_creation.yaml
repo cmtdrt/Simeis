@@ -125,7 +125,9 @@ jobs:
             echo "Description: Simeis est un serveur API de jeu de gestion."
           } > "debian/DEBIAN/control"
           chmod 755 "debian/DEBIAN/control"
-
+          chmod 755 "debian/DEBIAN/postinst"
+          chmod 755 "debian/DEBIAN/etc/systemd/system/simeis.service"
+          
           dpkg-deb --root-owner-group --build "debian" "$DEB_FILE"
 
       - name: Install Typst
