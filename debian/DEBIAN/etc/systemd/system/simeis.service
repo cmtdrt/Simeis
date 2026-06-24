@@ -1,0 +1,20 @@
+[Unit]
+Description=Simeis API Server
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/simeis-server
+Restart=on-failure
+RestartSec=2
+
+# optionnel mais recommandé
+User=student
+WorkingDirectory=/home/student
+
+# logs visibles via journalctl
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target`

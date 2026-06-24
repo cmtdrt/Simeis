@@ -108,13 +108,14 @@ jobs:
       - name: Build Debian package
         run: |
           VERSION="${{ steps.version.outputs.version }}"
-          PKG_ROOT="packaging/simeis-deb"
           DEB_FILE="simeis_${VERSION}_amd64.deb"
 
-          mkdir -p "$PKG_ROOT/DEBIAN" "$PKG_ROOT/usr/bin"
-          cp target/release/simeis-server "$PKG_ROOT/usr/bin/"
+          mkdir -p"debian/usr/bin"
+          cp target/release/simeis-server "debian/usr/bin/"
+          
           # Permission d'exécution pour le fichier simeis-server
-          chmod 755 "$PKG_ROOT/usr/bin/simeis-server"
+          chmod 755 "debian/usr/bin/simeis-server"
+
           # Création du fichier control
           {
             echo "Package: Simeis"
@@ -122,9 +123,10 @@ jobs:
             echo "Architecture: amd64"
             echo "Maintainer: Maxime maximefuzeau3@gmail.com"
             echo "Description: Simeis est un serveur API de jeu de gestion."
-          } > "$PKG_ROOT/DEBIAN/control"
+          } > "debian/DEBIAN/control"
+          chmod 755 "debian/DEBIAN/control"
 
-          dpkg-deb --root-owner-group --build "$PKG_ROOT" "$DEB_FILE"
+          dpkg-deb --root-owner-group --build "debian" "$DEB_FILE"
 
       - name: Install Typst
         uses: typst-community/setup-typst@v3
