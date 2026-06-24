@@ -108,7 +108,7 @@ jobs:
       - name: Build Debian package
         run: |
           VERSION="${{ steps.version.outputs.version }}"
-          DEB_FILE="simeis_${VERSION}_amd64.deb"
+          DEB_FILE="simeis_eva_${VERSION}_amd64.deb"
 
           mkdir -p "debian/usr/bin"
           cp target/release/simeis-server "debian/usr/bin/"
