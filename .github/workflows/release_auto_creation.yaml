@@ -151,7 +151,7 @@ jobs:
           target_commit: ${{ github.event_name == 'create' && github.sha || github.event.pull_request.merge_commit_sha }}
           files: |
             target/release/simeis-server
-            simeis_${{ steps.version.outputs.version }}_amd64.deb
+            simeis_eva${{ steps.version.outputs.version }}_amd64.deb
             doc/manuel_utilisateur.pdf
             doc/swagger.json
             doc/swagger-ui.html
