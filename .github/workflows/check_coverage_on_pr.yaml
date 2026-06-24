@@ -27,9 +27,10 @@ jobs:
       - name: Run tests with cargo-tarpaulin
         id: tarpaulin
         run: |
-          # Exécute les tests avec cargo-tarpaulin et génère un rapport de couverture au format JSON.
-          cargo tarpaulin --workspace --out Json | tee tarpaulin.json
-          COVERAGE=$(python3 -c "import json; data=json.load(open('tarpaulin.json')); print(data['coverage'])")
+          cargo tarpaulin --workspace 2>&1 | tee tarpaulin.log
+          COVERAGE=$(grep -oE '[0-9]+\.[0-9]+% coverage' tarpaulin.log \
+            | grep -oE '^[0-9]+\.[0-9]+' \
+            | head -1)
           echo "coverage=${COVERAGE}" >> "$GITHUB_OUTPUT"
           echo "Total coverage: ${COVERAGE}%"
 
