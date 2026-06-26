@@ -2,9 +2,10 @@ FROM rust:1.88.0-trixie
 
 WORKDIR /app
 
-# Contexte filtré par .dockerignore ; doc/swagger* requis par include_str! à la compilation
+# On copie tout le projet filtré par .dockerignore
 COPY . .
 
+# On compile le serveur en mode release et on copie le binaire dans le conteneur
 RUN cargo build --release --package simeis-server \
     && cp target/release/simeis-server /app/simeis-server
 
