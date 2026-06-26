@@ -157,7 +157,7 @@ jobs:
       - name: Test Docker image
         run: |
           docker run -d --rm --name simeis-test -p 3333:3333 simeis-server:${{ steps.version.outputs.version }}
-          curl -sf --retry 10 --retry-delay 2 http://localhost:3333/ping
+          curl -sf --retry 10 --retry-delay 2 http://127.0.0.1:3333/ping || { docker logs simeis-test; exit 1; }
           docker stop simeis-test
 
       - name: Export Docker image
