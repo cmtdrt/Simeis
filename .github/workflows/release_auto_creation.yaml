@@ -185,3 +185,29 @@ jobs:
             doc/manuel_utilisateur.pdf
             doc/swagger.json
             doc/swagger-ui.html
+
+      - name: Deploiement du package sur le serveur
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          SUDO_PASSWORD: ${{ secrets.SUDO_PASSWORD }}
+          SERVER_USER: ${{ secrets.SERVER_USER }}
+          SERVER_HOST: ${{ secrets.SERVER_HOST }}
+        run: |
+          # Sauvegarde la clé privée SSH dans un fichier temporaire .pem (extension de fichier pour les clés privées) et définit les permissions appropriées
+          echo "$SSH_PRIVATE_KEY" > private_key.pem
+          chmod 600 private_key.pem
+
+          # On vient copier le package .deb sur le serveur distant
+          scp -i private_key.pem -o 'StrictHostKeyChecking=no' -P 22222 simeis_eva_${{ steps.version.outputs.version }}_amd64.deb $SERVER_USER@$SERVER_HOST:/home/student/base/ || true
+
+          # On stopper et on remove -r l'ancienne version
+          ssh -i private_key.pem -o 'StrictHostKeyChecking=no' -p 22222 $SERVER_USER@$SERVER_HOST "echo '$SUDO_PASSWORD' | sudo -S systemctl stop simeis.service && echo '$SUDO_PASSWORD' | sudo -S dpkg -r simeis"
+
+          # Puis on installe le package et on redémarre le service
+          ssh -i private_key.pem -o 'StrictHostKeyChecking=no' -p 22222 $SERVER_USER@$SERVER_HOST "echo '$SUDO_PASSWORD' | sudo -S dpkg -i /home/student/base/simeis_eva_${{ steps.version.outputs.version }}_amd64.deb && echo '$SUDO_PASSWORD' | sudo -S systemctl restart simeis.service"
+
+          # On effectue un test pour vérifier que le service est bien démarré et que la version ${{ steps.version.outputs.version }} est correcte
+          ssh -i private_key.pem -o 'StrictHostKeyChecking=no' -p 22222 $SERVER_USER@$SERVER_HOST "curl -s http://localhost:3333/version | grep '${{ steps.version.outputs.version }}' || (echo 'Erreur : le service ne répond pas correctement ou la version est incorrecte.' && exit 1)"
+
+          # Une fois le déploiement terminé, et le test effectué, on supprime le fichier temporaire contenant la clé privée
+          rm -f private_key.pem
