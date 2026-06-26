@@ -1,6 +1,8 @@
 target/
 .git/
-doc/
+doc/**
+!doc/swagger-ui.html
+!doc/swagger.json
 debian/
 example/
 sdk/
