@@ -31,7 +31,8 @@ jobs:
 
       - name: Start Simeis server in background
         run: |
-          cargo run --package simeis-server > server.log 2>&1 &
+          setsid cargo run --package simeis-server > server.log 2>&1 < /dev/null &
+          disown
           echo $! > server.pid
           # Attendre que le serveur réponde réellement
           for i in $(seq 1 30); do
