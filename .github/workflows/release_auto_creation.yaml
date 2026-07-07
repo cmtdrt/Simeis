@@ -192,8 +192,8 @@ jobs:
         env:
           SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
           SUDO_PASSWORD: ${{ secrets.SUDO_PASSWORD }}
-          SERVER_USER: ${{ secrets.SERVER_USER }}
-          SERVER_HOST: ${{ secrets.SERVER_HOST }}
+          SERVER_USER: ${{ vars.SERVER_USER }}
+          SERVER_HOST: ${{ vars.SERVER_HOST }}
         run: |
           # Sauvegarde la clé privée SSH dans un fichier temporaire .pem (extension de fichier pour les clés privées) et définit les permissions appropriées
           echo "$SSH_PRIVATE_KEY" > private_key.pem
