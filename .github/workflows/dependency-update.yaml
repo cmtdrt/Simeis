@@ -37,8 +37,6 @@ jobs:
           fetch-depth: 0
 
       - uses: dtolnay/rust-toolchain@stable
-        with:
-          toolchain: stable
 
       - name: Update Cargo.lock files
         id: update_lock
