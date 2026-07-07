@@ -29,40 +29,37 @@ jobs:
       - name: Build Simeis server
         run: cargo build --package simeis-server --quiet
 
-      - name: Start Simeis server in background
+      - name: Run functional tests with Simeis server
         run: |
-          setsid cargo run --package simeis-server > server.log 2>&1 < /dev/null &
-          disown
-          echo $! > server.pid
+          cargo run --package simeis-server > server.log 2>&1 &
+          SERVER_PID=$!
+
           # Attendre que le serveur réponde réellement
           for i in $(seq 1 30); do
             if curl -sf http://127.0.0.1:3333/ping > /dev/null 2>&1; then
               echo "Serveur prêt après ${i}s"
-              exit 0
+              break
             fi
             echo "Attente... (${i}/30)"
             sleep 1
+            if [ "$i" -eq 30 ]; then
+              echo "Timeout : le serveur n'a pas démarré"
+              cat server.log
+              kill "$SERVER_PID" || true
+              exit 1
+            fi
           done
-          echo "Timeout : le serveur n'a pas démarré"
-          cat server.log
-          exit 1
 
-      - name: Run functional test script
-        run: |
-          # Juste avant de lancer les tests Python
-          if ! kill -0 "$SERVER_PID" 2>/dev/null; then
-            echo "Le serveur est mort avant les tests !"
-            cat server.log
-            exit 1
-          fi
-
+          # Lancer les tests fonctionnels
           python -m py_compile tests/functional_test.py
           python tests/functional_test.py
+          TEST_EXIT_CODE=$?
 
-      - name: Stop Simeis server
-        # `if: always()` garantit que le serveur est bien arrêté même si l'étape de test précédente a échoué
-        if: always()
-        run: |
-          if [ -f server.pid ]; then
-            kill "$(cat server.pid)" || true
-          fi
+          # Toujours afficher les logs serveur pour debug
+          echo "--- server.log ---"
+          cat server.log
+
+          # Arrêter le serveur proprement
+          kill "$SERVER_PID" || true
+
+          exit $TEST_EXIT_CODE
