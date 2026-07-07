@@ -16,8 +16,10 @@ jobs:
     steps:
       - name: Check branch naming rules
         run: |
-          BASE_BRANCH="${{ github.base_ref }}" # La branche cible de la PR
-          HEAD_BRANCH="${{ github.head_ref }}" # La branche source de la PR
+          # La branche cible de la PR
+          BASE_BRANCH="${{ github.base_ref }}"
+          # La branche source de la PR
+          HEAD_BRANCH="${{ github.head_ref }}"
 
           # Si la branche cible est une branche release/*, alors la branche source doit être main ou bug/*
           if [[ "$BASE_BRANCH" == release/* ]]; then
