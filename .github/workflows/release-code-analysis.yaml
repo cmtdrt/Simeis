@@ -17,9 +17,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-python@v6
-        with:
-          python-version: "3.12"
       - uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: stable # On utilise la version stable de Rust pour les tests et cargo-audit
@@ -27,12 +24,12 @@ jobs:
 
       # --locked garantit qu'on installe exactement les versions verrouillées dans Cargo.lock,
       # pour des résultats reproductibles d'un run à l'autre
-      - run: cargo install cargo-audit cargo-udeps --locked
-      - run: cargo test --all --features heavy-testing
-      - run: cargo build --all --features heavy-testing
+      - run: cargo +stable install cargo-audit cargo-udeps --locked
+      - run: cargo +stable test --all --features heavy-testing
+      - run: cargo +stable build --all --features heavy-testing
 
       # cargo-audit vérifie les vulnérabilités connues dans les dépendances du projet
-      - run: cargo audit
+      - run: cargo +stable audit
 
       # cargo-udeps détecte les dépendances déclarées mais non utilisées dans le projet
       - run: cargo +nightly udeps

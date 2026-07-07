@@ -37,8 +37,18 @@ jobs:
         run: |
           cargo run --package simeis-server > server.log 2>&1 &
           echo $! > server.pid
-          # Attendre que le serveur soit prêt à accepter les connexions
-          sleep 5
+          # Attendre que le serveur réponde réellement
+          for i in $(seq 1 30); do
+            if curl -sf http://127.0.0.1:3333/ping > /dev/null 2>&1; then
+              echo "Serveur prêt après ${i}s"
+              exit 0
+            fi
+            echo "Attente... (${i}/30)"
+            sleep 1
+          done
+          echo "Timeout : le serveur n'a pas démarré"
+          cat server.log
+          exit 1
 
       - name: Run functional test script
         run: |
