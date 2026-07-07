@@ -4,6 +4,15 @@ on:
   pull_request:
     types: [opened, synchronize, reopened]
 
+permissions:
+  # Nécessaire pour le checkout du dépôt
+  contents: read
+  # Nécessaire pour lire l'état des issues via `gh issue view`
+  issues: read
+
+# Ce workflow est déclenché sur chaque PR, et vérifie :
+# - que la branche source respecte les règles de nommage (ex. pas de PR vers release/* depuis une branche feature/*)  
+
 jobs:
   validate-branch:
     name: Validate Branch Rules
@@ -22,6 +31,7 @@ jobs:
           fi
           echo "Nom de branche valide."
 
+  # Les jobs suivants dépendent de validate-branch, et ne s'exécutent que si la validation de branche réussit grâce au needs.
   python-checks:
     name: Python Format & Lint
     needs: validate-branch

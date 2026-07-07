@@ -1,4 +1,7 @@
 name: Scheduled Rust dependency update
+# Fonctionnement du workflow:
+# - Tous les jours on met à jour les Cargo.lock du repo.
+# - S'il y a un changement, on ouvre (ou met à jour) une PR automatique portant ces changements.
 
 on:
   workflow_dispatch:
@@ -11,9 +14,11 @@ env:
   CARGO_TERM_COLOR: always
 
 permissions:
-  # Permissions necessaires pour creer/metre a jour la PR et (eventuellement) creer le label.
+  # Necessaire pour pousser la branche contenant les Cargo.lock mis a jour
   contents: write
+  # Necessaire pour creer/mettre a jour la PR
   pull-requests: write
+  # Necessaire pour creer le label
   issues: write
 
 concurrency:
@@ -26,7 +31,7 @@ jobs:
   update:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         # On met fetch-depth à 0 pour récupérer l'historique complet du dépôt, afin de pouvoir vérifier les changements dans les fichiers Cargo.lock.
         with:
           fetch-depth: 0
@@ -58,50 +63,37 @@ jobs:
           fi
 
       - name: Ensure label exists
-        # On cree le label seulement si on a reellement des changements de dependances.
+        # On cree/met a jour le label seulement si on a reellement des changements de dependances.
         if: steps.check.outputs.updated == 'true'
-        uses: actions/github-script@v7
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            const label = 'bot/update'
-            try {
-              // Recupere le label s'il existe deja.
-              await github.rest.issues.getLabel({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                name: label
-              })
-            } catch (e) {
-              // S'il n'existe pas, on le cree
-              if (e.status === 404) {
-                await github.rest.issues.createLabel({
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  name: label,
-                  color: '1d4ed8',
-                  description: 'Automated dependency updates'
-                })
-              } else {
-                throw e
-              }
-            }
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh label create "bot/update" --color "1d4ed8" --description "Automated dependency updates" --force
 
       - name: Create or update dependency PR
         # Ne lance la création/mise à jour de PR que s'il y a eu du changement dans les dependances.
         if: steps.check.outputs.updated == 'true'
-        uses: peter-evans/create-pull-request@v7
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          branch: bot/dependency-update
-          title: "chore: update Rust dependencies"
-          body: "Mise à jour automatique des dépendances via `cargo update`."
-          commit-message: "chore: update Rust dependencies"
-          labels: bot/update
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          BRANCH="bot/dependency-update"
+          TITLE="chore: update Rust dependencies"
+          BODY="Mise à jour automatique des dépendances via \`cargo update\`."
 
-          delete-branch: false
+          # Identité utilisée pour le commit automatique
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-          add-paths: |
-            Cargo.lock
-            example/rust/Cargo.lock
-            sdk/rust/Cargo.lock
+          # On crée (ou réutilise) une branche dédiée, on y commit les Cargo.lock modifiés, et on la pousse
+          # en forçant le push pour écraser une éventuelle exécution précédente de cette même branche.
+          git checkout -B "$BRANCH"
+          git add Cargo.lock example/rust/Cargo.lock sdk/rust/Cargo.lock
+          git commit -m "$TITLE"
+          git push origin "$BRANCH" --force
+
+          # Si une PR existe déjà pour cette branche, on la met simplement à jour ; sinon on la crée.
+          if gh pr view "$BRANCH" >/dev/null 2>&1; then
+            gh pr edit "$BRANCH" --title "$TITLE" --body "$BODY" --add-label "bot/update"
+          else
+            gh pr create --title "$TITLE" --body "$BODY" --head "$BRANCH" --label "bot/update"
+          fi

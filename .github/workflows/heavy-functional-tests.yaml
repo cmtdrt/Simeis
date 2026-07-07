@@ -16,10 +16,10 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: '3.11'
 
@@ -46,6 +46,7 @@ jobs:
           python tests/functional_test.py
 
       - name: Stop Simeis server
+        # `if: always()` garantit que le serveur est bien arrêté même si l'étape de test précédente a échoué
         if: always()
         run: |
           if [ -f server.pid ]; then

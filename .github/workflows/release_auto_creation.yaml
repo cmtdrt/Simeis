@@ -21,7 +21,7 @@ jobs:
   release:
     name: Créer ou mettre à jour la release
     runs-on: ubuntu-latest
-    # S'assurer que la PR est bien mergée (et pas juste fermée), ou que c'est bien une branche release/* qui est créée
+    # S'assurer que la PR est bien mergée (et pas juste fermée), ou que c'est bien une branche release/* qui est créée parce que l'événement create est déclenché pour toutes les branches et ne supporte pas de filtre sur le nom de la branche.
     if: >
       (github.event_name == 'pull_request' &&
        github.event.pull_request.merged == true) ||
@@ -29,7 +29,7 @@ jobs:
        startsWith(github.ref, 'refs/heads/release/'))
     steps:
       - name: Checkout du dépôt
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           # Nécessaire pour bien récupérer la valeur de target_commit (sha du commit mergé)
           # En mettant 0 on récupère l'historique complet du dépôt, pour être sur de récupérer le commit mergé.
@@ -137,12 +137,14 @@ jobs:
           
           dpkg-deb --root-owner-group --build "debian" "$DEB_FILE"
 
+      # On installe Typst pour générer le manuel utilisateur en PDF puisque le Makefile utilise Typst pour générer le PDF.
       - name: Install Typst
-        uses: typst-community/setup-typst@v3
+        uses: typst-community/setup-typst@v5
 
       - name: Build user manual
         run: make doc
 
+      # On configure Docker Buildx pour construire les images Docker.
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
 
@@ -185,3 +187,29 @@ jobs:
             doc/manuel_utilisateur.pdf
             doc/swagger.json
             doc/swagger-ui.html
+
+      - name: Deploiement du package sur le serveur
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          SUDO_PASSWORD: ${{ secrets.SUDO_PASSWORD }}
+          SERVER_USER: ${{ secrets.SERVER_USER }}
+          SERVER_HOST: ${{ secrets.SERVER_HOST }}
+        run: |
+          # Sauvegarde la clé privée SSH dans un fichier temporaire .pem (extension de fichier pour les clés privées) et définit les permissions appropriées
+          echo "$SSH_PRIVATE_KEY" > private_key.pem
+          chmod 600 private_key.pem
+
+          # On vient copier le package .deb sur le serveur distant
+          scp -i private_key.pem -o 'StrictHostKeyChecking=no' -P 22222 simeis_eva_${{ steps.version.outputs.version }}_amd64.deb $SERVER_USER@$SERVER_HOST:/home/student/base/ || true
+
+          # On stop et on remove -r l'ancienne version
+          ssh -i private_key.pem -o 'StrictHostKeyChecking=no' -p 22222 $SERVER_USER@$SERVER_HOST "echo '$SUDO_PASSWORD' | sudo -S systemctl stop simeis.service && echo '$SUDO_PASSWORD' | sudo -S dpkg -r simeis"
+
+          # Puis on installe le package et on redémarre le service
+          ssh -i private_key.pem -o 'StrictHostKeyChecking=no' -p 22222 $SERVER_USER@$SERVER_HOST "echo '$SUDO_PASSWORD' | sudo -S dpkg -i /home/student/base/simeis_eva_${{ steps.version.outputs.version }}_amd64.deb && echo '$SUDO_PASSWORD' | sudo -S systemctl restart simeis.service"
+
+          # On effectue un test pour vérifier que le service est bien démarré et que la version ${{ steps.version.outputs.version }} est correcte
+          ssh -i private_key.pem -o 'StrictHostKeyChecking=no' -p 22222 $SERVER_USER@$SERVER_HOST "curl -s http://localhost:3333/version | grep '${{ steps.version.outputs.version }}' || (echo 'Erreur : le service ne répond pas correctement ou la version est incorrecte.' && exit 1)"
+
+          # Une fois le déploiement terminé, et le test effectué, on supprime le fichier temporaire contenant la clé privée
+          rm -f private_key.pem

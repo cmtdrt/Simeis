@@ -1,9 +1,14 @@
 name: Heavy Property-Based Tests
+# Fonctionnement du workflow:
+# - Lance les tests property-based testing.
+# - Si des régressions ont été détectées et enregistrées dans tests/regressions.json, on les commit
+#   automatiquement pour les rejouer en priorité lors des prochains runs.
 
 on:
   pull_request:
     branches:
       - 'release/**'
+    # Ne se déclenche que si ces chemins précis sont modifiés, pour éviter de lancer un test long pour rien.
     paths:
       - 'tests/propertybased.py'
       - 'simeis-data/**'
@@ -20,6 +25,7 @@ on:
       - '.github/workflows/heavy-property-based-test.yaml'
 
 concurrency:
+  # Un seul run à la fois par branche/ref : un nouveau push annule le run précédent en cours
   group: heavy-test-${{ github.ref }} 
   cancel-in-progress: true
 
@@ -29,21 +35,33 @@ jobs:
     permissions:
       contents: write # Requis pour que le bot puisse commit le fichier regressions.json
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: '3.11'
       
-      - name: Run heavy property-based tests (<=5 min total)
+      - name: Run heavy property-based tests
+        # timeout-minutes en sécurité au cas où l'exécution dépasserait la limite prévue
         run: python tests/propertybased.py heavy
         timeout-minutes: 6
       
       - name: Commit regressions updates
+        # `if: always()` : on veut committer les régressions même si le test précédent a échoué
+        # ou timeout, car regressions.json peut avoir été mis à jour avant l'échec.
         if: always()
-        uses: stefanzweifel/git-auto-commit-action@v5
-        with:
-          commit_message: 'test: update regressions from heavy test run'
-          file_pattern: 'tests/regressions.json'
-          commit_options: '--no-verify'
+        run: |
+          set -euo pipefail
+
+          # Rien à faire si le fichier n'a pas été modifié par le test
+          if git diff --quiet -- tests/regressions.json; then
+            echo "Aucun changement dans tests/regressions.json, rien à commit."
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add tests/regressions.json
+          git commit --no-verify -m "test: update regressions from heavy test run"
+          git push

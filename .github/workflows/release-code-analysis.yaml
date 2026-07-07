@@ -1,4 +1,8 @@
 name: Release Code Analysis
+# Fonctionnement du workflow:
+# - Sur les branches release/*, lance les tests avec les features "heavy", puis des vérifications
+#   de sécurité et d'hygiène du code : cargo-audit (vulnérabilités connues dans les dépendances)
+#   et cargo-udeps (dépendances déclarées mais non utilisées, nécessite la toolchain nightly).
 
 on:
   push:
@@ -12,16 +16,23 @@ jobs:
   code-analysis:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
       - uses: dtolnay/rust-toolchain@stable
         with:
-          toolchain: stable 
+          toolchain: stable # On utilise la version stable de Rust pour les tests et cargo-audit
       - uses: dtolnay/rust-toolchain@nightly
+
+      # --locked garantit qu'on installe exactement les versions verrouillées dans Cargo.lock,
+      # pour des résultats reproductibles d'un run à l'autre
       - run: cargo install cargo-audit cargo-udeps --locked
       - run: cargo test --all --features heavy-testing
       - run: cargo build --all --features heavy-testing
+
+      # cargo-audit vérifie les vulnérabilités connues dans les dépendances du projet
       - run: cargo audit
+
+      # cargo-udeps détecte les dépendances déclarées mais non utilisées dans le projet
       - run: cargo +nightly udeps

@@ -1,10 +1,15 @@
 name: Validate TODOs have associated issues
+# Vérifie que chaque TODO du code (Rust/Python) référence bien un numéro d'issue GitHub,
+# et que cette issue existe et est toujours ouverte.
 
 on:
   workflow_call:
 
-env:
-  CARGO_TERM_COLOR: always
+permissions:
+  # Nécessaire pour le checkout du dépôt
+  contents: read
+  # Nécessaire pour lire l'état des issues via `gh issue view`
+  issues: read
 
 jobs:
   validate-todos:
@@ -12,13 +17,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Validate TODOs
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          # Find all TODOs in Rust and Python files
+          # Recherche tous les TODOs dans les fichiers Rust et Python, en excluant le dossier de build target/
           todos=$(grep -rn "TODO" --include="*.rs" --include="*.py" . | grep -v "target/")
 
           if [ -z "$todos" ]; then
@@ -26,7 +31,7 @@ jobs:
             exit 0
           fi
 
-          # Check if each TODO has an associated issue number (TODO (#15))
+          # Regarde si chaque TODO à un numéro d'issue (TODO (#15))
           while IFS= read -r todo; do
             if ! echo "$todo" | grep -qP "TODO \(#\d+\)"; then
               echo "TODO without associated issue found: $todo"
@@ -34,7 +39,7 @@ jobs:
             fi
           done <<< "$todos"
 
-          # Check if the referenced issues actually exist on GitHub and are open
+          # Regarde si chaque numéro d'issue référencé existe et est ouvert
           while IFS= read -r todo; do
             issue_number=$(echo "$todo" | grep -oP "TODO \(#\d+\)" | grep -oP "#\d+" | tr -d "#")
             if ! gh issue view "$issue_number" --repo "${{ github.repository }}" --json state -q ".state" | grep -qi "open"; then

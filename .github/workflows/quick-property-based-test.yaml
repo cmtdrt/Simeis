@@ -1,7 +1,11 @@
 name: Quick Property-Based Tests
+# Fonctionnement du workflow:
+# - Version rapide des tests property-based, exécutée sur chaque PR qui touche les fichiers concernés.
+# - Ne se déclenche pas sur les PRs ciblant une branche release/*, qui passent par la version "heavy" à la place .
 
 on:
   pull_request:
+    # Ne se déclenche que si ces chemins précis sont modifiés
     paths:
       - 'tests/propertybased.py'
       - 'simeis-data/**'
@@ -9,18 +13,20 @@ on:
       - '.github/workflows/quick-property-based-test.yaml'
 
 concurrency:
+  # Un seul run à la fois par branche/PR : un nouveau push annule le run précédent en cours
   group: quick-test-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
   quick-test:
+    # Ne se lance pas si la PR cible une branche release/*
     if: "!startsWith(github.base_ref, 'release')"
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: '3.11'
       
