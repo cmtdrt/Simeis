@@ -49,6 +49,13 @@ jobs:
 
       - name: Run functional test script
         run: |
+          # Juste avant de lancer les tests Python
+          if ! kill -0 "$SERVER_PID" 2>/dev/null; then
+            echo "Le serveur est mort avant les tests !"
+            cat server.log
+            exit 1
+          fi
+
           python -m py_compile tests/functional_test.py
           python tests/functional_test.py
 
