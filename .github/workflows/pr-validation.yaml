@@ -1,7 +1,12 @@
 name: PR Validation - Branch Rules
+# Fonctionnement du workflow:
+# - Valide la règle métier suivante : une PR ciblant une branche release/* ne peut venir
+#   que de `main` ou d'une branche `bug/*` (les features doivent d'abord passer par main).
+# - Si la règle est respectée, enchaîne sur 3 autres workflows réutilisables (Python, Rust, TODOs).
 
 on:
   pull_request:
+    # synchronize : nouveau push sur la PR ; reopened : PR rouverte après fermeture
     types: [opened, synchronize, reopened]
 
 jobs:
@@ -11,9 +16,10 @@ jobs:
     steps:
       - name: Check branch naming rules
         run: |
-          BASE_BRANCH="${{ github.base_ref }}"
-          HEAD_BRANCH="${{ github.head_ref }}"
+          BASE_BRANCH="${{ github.base_ref }}" # La branche cible de la PR
+          HEAD_BRANCH="${{ github.head_ref }}" # La branche source de la PR
 
+          # Si la branche cible est une branche release/*, alors la branche source doit être main ou bug/*
           if [[ "$BASE_BRANCH" == release/* ]]; then
             if [[ "$HEAD_BRANCH" != "main" && "$HEAD_BRANCH" != bug/* ]]; then
               echo "Erreur : Les PRs vers release/* doivent provenir de main ou bug/*"
@@ -21,6 +27,9 @@ jobs:
             fi
           fi
           echo "Nom de branche valide."
+
+  # Les 3 jobs suivants ne se lancent que si validate-branch a réussi, ils 'needs' donc de validate-branch.
+  # Pour eviter de lancer des jobs pour rien
 
   python-checks:
     name: Python Format & Lint

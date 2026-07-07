@@ -8,6 +8,7 @@ on:
 
 permissions:
   contents: read
+  # Nécessaire pour créer/ajouter/retirer le label sur la PR via gh
   pull-requests: write
 
 jobs:
@@ -16,7 +17,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
@@ -24,13 +25,13 @@ jobs:
       - name: Install cargo-tarpaulin
         run: cargo install cargo-tarpaulin
 
+      # Exécute les tests avec cargo-tarpaulin et génère un rapport de couverture au format JSON.
+      # Le pourcentage de couverture est ensuite stocké dans la variable d'environnement COVERAGE avec la commande jq pour extraire la valeur de 'coverage' du fichier json.
       - name: Run tests with cargo-tarpaulin
         id: tarpaulin
         run: |
-          cargo tarpaulin --workspace 2>&1 | tee tarpaulin.log
-          COVERAGE=$(grep -oE '[0-9]+\.[0-9]+% coverage' tarpaulin.log \
-            | grep -oE '^[0-9]+\.[0-9]+' \
-            | head -1)
+          cargo tarpaulin --workspace --out Json --output-dir .
+          COVERAGE=$(jq -r '.coverage' tarpaulin-report.json)
           echo "coverage=${COVERAGE}" >> "$GITHUB_OUTPUT"
           echo "Total coverage: ${COVERAGE}%"
 
