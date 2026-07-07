@@ -65,11 +65,3 @@ jobs:
           git add tests/regressions.json
           git commit --no-verify -m "test: update regressions from heavy test run"
           git push
-
-      # - name: Commit regressions updates
-      #   if: always()
-      #   uses: stefanzweifel/git-auto-commit-action@v5
-      #   with:
-      #     commit_message: 'test: update regressions from heavy test run'
-      #     file_pattern: 'tests/regressions.json'
-      #     commit_options: '--no-verify'
