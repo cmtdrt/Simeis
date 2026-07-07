@@ -24,11 +24,7 @@ jobs:
           python-version: '3.11'
 
       - name: Set up Rust
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          profile: minimal
-          override: true
+        uses: dtolnay/rust-toolchain@stable
 
       - name: Build Simeis server
         run: cargo build --package simeis-server --quiet
